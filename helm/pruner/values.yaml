@@ -1,0 +1,17 @@
+# Default values for pruner.
+# This is a YAML-formatted file.
+
+failedJobsHistoryLimit: 1
+
+image: quay.io/amigliet/quay-tags-pruner:v0.1
+imagePullPolicy: IfNotPresent
+
+namespace: demo-cronjobs
+
+schedule: 30 22 * * *
+startingDeadlineSeconds: 200
+successfulJobsHistoryLimit: 3
+
+secret:
+  auth_json: { "quay_app_token": "<token>" }
+

@@ -1,0 +1,37 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: quay-tags-pruner
+  namespace: {{ .Values.namespace }}
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          activeDeadlineSeconds: 500
+          containers:
+          - image: {{ .Values.image }}
+            imagePullPolicy:  {{ .Values.imagePullPolicy }}
+            name: quay-tags-pruner
+            volumeMounts:
+            - mountPath: /opt/secret
+              name: quay-token
+            - mountPath: /opt/conf
+              name: quay-config
+          dnsPolicy: ClusterFirst
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - configMap:
+              defaultMode: 420
+              name: quay-tags-pruner-config
+            name: quay-config
+          - name: quay-token
+            secret:
+              defaultMode: 420
+              secretName: quay-tags-pruner-token
+  schedule: {{ .Values.schedule }}
+  startingDeadlineSeconds: {{ .Values.startingDeadlineSeconds }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}

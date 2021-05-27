@@ -1,0 +1,13 @@
+{
+    "vars": {
+        "debug": "True",
+        "dry_run": "False",
+        "quay_url": "example-quay-quay-registry.apps.cluster-name.base-domain.com",
+        "keep_tag_number": "5",
+        "tag_pattern": ".",
+        "quay_orgs": [
+            "library",
+            "amigliet"
+        ]
+    }
+}
