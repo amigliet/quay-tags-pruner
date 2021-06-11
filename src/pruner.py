@@ -77,11 +77,10 @@ if __name__ == "__main__":
         logging.exception("Error reading file %s: %s", configFile, err)
         os._exit(1)
 
-    debug         = conf_json["vars"]["debug"]
-    dryRun        = conf_json["vars"]["dry_run"]
-    keepTagNumber = int(conf_json["vars"]["keep_tag_number"])
-    quayUrl       = conf_json["vars"]["quay_url"]
-    tagPattern    = conf_json["vars"]["tag_pattern"]
+    debug   = True if conf_json["vars"]["debug"].upper() == "TRUE" else False
+    dryRun  = True if conf_json["vars"]["dry_run"].upper() == "TRUE" else False
+    quayUrl = conf_json["vars"]["quay_url"]
+    tags    = conf_json["vars"]["tags"]
 
     if debug:
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG)
@@ -89,11 +88,10 @@ if __name__ == "__main__":
         logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', level=logging.INFO)
         urllib3.disable_warnings()
 
-    logging.info("Quay URL: %s", quayUrl)
-    logging.debug("Quay App Token: %s", authToken)
-    logging.info("Tags search pattern: %s", tagPattern)
-    logging.info("Keep Tag Revisions: %s", keepTagNumber)
-    logging.info("Organizations found: %s",conf_json["vars"]["quay_orgs"])
+    logging.info(f"Quay URL: {quayUrl}")
+    logging.debug(f"Quay App Token: {authToken}")
+    logging.info(f"Organizations found: {conf_json['vars']['quay_orgs']}")
+    logging.info(f"Tags: {tags}")
 
     for org in conf_json["vars"]["quay_orgs"]:
         repos = get_repos_json(quayUrl, authToken, org)
@@ -104,18 +102,18 @@ if __name__ == "__main__":
         logging.debug("%s", json.dumps(repos, indent=4))
 
         for image in repos["repositories"]:
-            tags = get_tags_json(quayUrl, authToken, org, image["name"])
-            if tags is None:
-                logging.info("image %s has no tags: %s", json.dumps(tags, indent=4))
-                continue
+            for tag in tags:
+                imageTags = get_tags_json(quayUrl, authToken, org, image["name"])
+                if imageTags is None:
+                    continue
 
-            badTags = select_tags_to_remove(tags, tagPattern, keepTagNumber)
-            if badTags is None:
-                logging.info("No tags to delete found for image %s", image["name"])
-                continue
+                badTags = select_tags_to_remove(imageTags, tag["pattern"], int(tag["revisions"]))
+                if badTags is None:
+                    logging.info("No tags to delete found for image %s", image["name"])
+                    continue
 
-            if dryRun:
-                logging.info("DRY-RUN Candidate tags for deletion for image %s: %s", image["name"], json.dumps(badTags, indent=4))
-            else:
-                delete_tags(quayUrl, authToken, org, image["name"], badTags)
+                if dryRun:
+                    logging.info("DRY-RUN Candidate tags for deletion for image %s: %s", image["name"], json.dumps(badTags, indent=4))
+                else:
+                    delete_tags(quayUrl, authToken, org, image["name"], badTags)
 
