@@ -12,7 +12,7 @@ def get_repos_json(quayURL, appToken, quayOrg):
     try:
         response = requests.get(baseUrl, headers=getHeaders, timeout=1.0, verify=False)
     except requests.ConnectionError as err:
-        logging.exception("Connection error: %s", err)
+        logging.exception(f"Connection error: {err}")
         return None
     return response.json()
 
@@ -22,7 +22,7 @@ def get_tags_json(quayURL, appToken, quayOrg, image):
     try:
         response = requests.get(baseUrl, headers=getHeaders, timeout=1.0, verify=False)
     except requests.ConnectionError as err:
-        logging.exception("Connection error: %s", err)
+        logging.exception(f"Connection error: {err}")
         return None
     return response.json()
 
@@ -50,11 +50,11 @@ def delete_tags(quayURL, appToken, quayOrg, image, tags):
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 400:
-                logging.info("%s/%s:%s has already been deleted", quayOrg, image, tag["name"])
+                logging.info(f"{quayOrg}/{image}:{tag['name']} has already been deleted")
             else:
-                logging.exception("Error deleting tag %s: %s", tag["name"], err)
+                logging.exception(f"Error deleting tag {tag['name']}: {err}")
             continue
-        logging.info("%s/%s:%s deleted", quayOrg, image, tag["name"])
+        logging.info(f"{quayOrg}/{image}:{tag['name']} deleted")
 
 
 if __name__ == "__main__":
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         with open(authFile, "r") as fp:
             auth_json = json.loads(fp.read())
     except IOError as err:
-        logging.exception("Error reading file %s: %s", authFile, err)
+        logging.exception(f"Error reading file {authFile}: {err}")
         os._exit(1)
 
     authToken = f"Bearer {auth_json['quay_app_token']}"
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         with open(configFile, "r") as fp:
             conf_json = json.loads(fp.read())
     except IOError as err:
-        logging.exception("Error reading file %s: %s", configFile, err)
+        logging.exception(f"Error reading file {configFile}: {err}")
         os._exit(1)
 
     debug   = True if conf_json["vars"]["debug"].upper() == "TRUE" else False
@@ -83,9 +83,17 @@ if __name__ == "__main__":
     tags    = conf_json["vars"]["tags"]
 
     if debug:
-        logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG)
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s: %(message)s',
+            datefmt='%Y/%m/%d %H:%M:%S',
+            level=logging.DEBUG
+        )
     else:
-        logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', level=logging.INFO)
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s: %(message)s',
+            datefmt='%Y/%m/%d %H:%M:%S',
+            level=logging.INFO
+        )
         urllib3.disable_warnings()
 
     logging.info(f"Quay URL: {quayUrl}")
@@ -96,10 +104,9 @@ if __name__ == "__main__":
     for org in conf_json["vars"]["quay_orgs"]:
         repos = get_repos_json(quayUrl, authToken, org)
         if repos is None:
-            logging.info("For org %s there are no repositories", org)
             continue
 
-        logging.debug("%s", json.dumps(repos, indent=4))
+        logging.debug(f"{json.dumps(repos, indent=4)}")
 
         for image in repos["repositories"]:
             for tag in tags:
@@ -109,11 +116,11 @@ if __name__ == "__main__":
 
                 badTags = select_tags_to_remove(imageTags, tag["pattern"], int(tag["revisions"]))
                 if badTags is None:
-                    logging.info("No tags to delete found for image %s", image["name"])
+                    logging.info(f"No tags to delete found for image {image['name']} with pattern {tag['pattern']}")
                     continue
 
                 if dryRun:
-                    logging.info("DRY-RUN Candidate tags for deletion for image %s: %s", image["name"], json.dumps(badTags, indent=4))
+                    logging.info(f"DRY-RUN Candidate tags for deletion for image {image['name']}: {json.dumps(badTags, indent=4)}")
                 else:
                     delete_tags(quayUrl, authToken, org, image["name"], badTags)
 
