@@ -3,7 +3,7 @@
 
 failedJobsHistoryLimit: 1
 
-image: quay.io/amigliet/quay-tags-pruner:v0.1
+image: quay.io/amigliet/quay-tags-pruner:v0.2
 imagePullPolicy: IfNotPresent
 
 namespace: demo-cronjobs

@@ -8,10 +8,10 @@
             "amigliet"
         ],
         "tags": [
-          {
-            "pattern": ".",
-            "revisions": "5"
-          }
+            {
+                "pattern": ".",
+                "revisions": "5"
+            }
         ]
     }
 }
