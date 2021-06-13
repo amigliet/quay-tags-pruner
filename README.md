@@ -4,8 +4,11 @@ Simple application to prune tags of images placed on a Red Hat Quay registry.
 
 ## Overview
 
-This application scans all the images present in a list of organizations and
-for each image it keeps only the latest N tags that match a specific pattern.
+This application:
+  - searches the given list of organizations for images
+  - scans the images for the desired tag patterns
+  - for each tag pattern it deletes all the tags except for the N most recent
+    tag revisions of every image
 
 List of available variables:
 
@@ -15,11 +18,15 @@ List of available variables:
         "debug": "True",
         "dry_run": "False",
         "quay_url": "example-quay-quay-registry.apps.cluster-name.base-domain.com",
-        "keep_tag_number": "5",
-        "tag_pattern": ".",
         "quay_orgs": [
             "library",
             "amigliet"
+        ],
+        "tags": [
+            {
+                "pattern": ".",
+                "revisions": "5"
+            }
         ]
     }
 }
