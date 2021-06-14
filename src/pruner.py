@@ -6,16 +6,20 @@ import requests
 import urllib3
 
 
-def get_repos_json(quayURL, appToken, quayOrg):
-    baseUrl = f"https://{quayUrl}/api/v1/repository?namespace={quayOrg}"
-    getHeaders = {'accept': 'application/json', 'Authorization': appToken}
+def get_repos_json(quay_host, app_token, quay_org):
+    base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}"
+    get_headers = {'accept': 'application/json', 'Authorization': app_token}
     try:
-        response = requests.get(baseUrl, headers=getHeaders, timeout=1.0,
-                                verify=False)
+        response = requests.get(
+            base_url,
+            headers=get_headers,
+            timeout=1.0,
+            verify=False
+        )
     except requests.ConnectionError as err:
         logging.exception(f"Connection error: {err}")
-        return None
-    return response.json()
+    else:
+        return response.json()
 
 
 def get_tags_json(quayURL, appToken, quayOrg, image):
