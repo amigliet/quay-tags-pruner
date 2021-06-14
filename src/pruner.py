@@ -8,23 +8,27 @@ import urllib3
 
 def get_repos_json(quayURL, appToken, quayOrg):
     baseUrl = f"https://{quayUrl}/api/v1/repository?namespace={quayOrg}"
-    getHeaders = { 'accept': 'application/json', 'Authorization': appToken }
+    getHeaders = {'accept': 'application/json', 'Authorization': appToken}
     try:
-        response = requests.get(baseUrl, headers=getHeaders, timeout=1.0, verify=False)
+        response = requests.get(baseUrl, headers=getHeaders, timeout=1.0,
+                                verify=False)
     except requests.ConnectionError as err:
         logging.exception(f"Connection error: {err}")
         return None
     return response.json()
 
+
 def get_tags_json(quayURL, appToken, quayOrg, image):
     baseUrl = f"https://{quayUrl}/api/v1/repository/{quayOrg}/{image}/tag/"
-    getHeaders = { 'accept': 'application/json', 'Authorization': appToken }
+    getHeaders = {'accept': 'application/json', 'Authorization': appToken}
     try:
-        response = requests.get(baseUrl, headers=getHeaders, timeout=1.0, verify=False)
+        response = requests.get(baseUrl, headers=getHeaders, timeout=1.0,
+                                verify=False)
     except requests.ConnectionError as err:
         logging.exception(f"Connection error: {err}")
         return None
     return response.json()
+
 
 def select_tags_to_remove(tags, pattern, keepTagN):
     matches = []
@@ -35,22 +39,26 @@ def select_tags_to_remove(tags, pattern, keepTagN):
     matchesLen = len(matches)
     if matchesLen > keepTagN:
         endIndex = matchesLen - keepTagN
-        sortedMatches = sorted(matches, key=lambda t:t["start_ts"])
+        sortedMatches = sorted(matches, key=lambda t: t["start_ts"])
         return sortedMatches[0:endIndex]
     else:
         return None
 
+
 def delete_tags(quayURL, appToken, quayOrg, image, tags):
     baseUrl = f"https://{quayUrl}/api/v1/repository/{quayOrg}/{image}/tag"
-    getHeaders = { 'accept': 'application/json', 'Authorization': appToken }
+    getHeaders = {'accept': 'application/json', 'Authorization': appToken}
     for tag in tags:
         deleteUrl = f"{baseUrl}/{tag['name']}"
-        response = requests.delete(deleteUrl, headers=getHeaders, timeout=1.0, verify=False)
+        response = requests.delete(deleteUrl, headers=getHeaders, timeout=1.0,
+                                   verify=False)
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 400:
-                logging.info(f"{quayOrg}/{image}:{tag['name']} has already been deleted")
+                logging.info(
+                    f"{quayOrg}/{image}:{tag['name']} has already been deleted"
+                )
             else:
                 logging.exception(f"Error deleting tag {tag['name']}: {err}")
             continue
@@ -77,10 +85,10 @@ if __name__ == "__main__":
         logging.exception(f"Error reading file {configFile}: {err}")
         os._exit(1)
 
-    debug   = True if conf_json["vars"]["debug"].upper() == "TRUE" else False
-    dryRun  = True if conf_json["vars"]["dry_run"].upper() == "TRUE" else False
+    debug = True if conf_json["vars"]["debug"].upper() == "TRUE" else False
+    dryRun = True if conf_json["vars"]["dry_run"].upper() == "TRUE" else False
     quayUrl = conf_json["vars"]["quay_url"]
-    tags    = conf_json["vars"]["tags"]
+    tags = conf_json["vars"]["tags"]
 
     if debug:
         logging.basicConfig(
@@ -110,17 +118,26 @@ if __name__ == "__main__":
 
         for image in repos["repositories"]:
             for tag in tags:
-                imageTags = get_tags_json(quayUrl, authToken, org, image["name"])
+                imageTags = get_tags_json(quayUrl, authToken, org,
+                                          image["name"])
                 if imageTags is None:
                     continue
 
-                badTags = select_tags_to_remove(imageTags, tag["pattern"], int(tag["revisions"]))
+                badTags = select_tags_to_remove(imageTags, tag["pattern"],
+                                                int(tag["revisions"]))
                 if badTags is None:
-                    logging.info(f"No tags to delete found for image {image['name']} with pattern {tag['pattern']}")
+                    logging.info(
+                        f"No tags to delete found for image {image['name']} "
+                        f"with pattern {tag['pattern']}"
+                    )
                     continue
 
                 if dryRun:
-                    logging.info(f"DRY-RUN Candidate tags for deletion for image {image['name']}: {json.dumps(badTags, indent=4)}")
+                    logging.info(
+                        f"DRY-RUN Candidate tags for deletion "
+                        f"for image {image['name']}: "
+                        f"{json.dumps(badTags, indent=4)}"
+                    )
                 else:
-                    delete_tags(quayUrl, authToken, org, image["name"], badTags)
-
+                    delete_tags(quayUrl, authToken, org, image["name"],
+                                badTags)
