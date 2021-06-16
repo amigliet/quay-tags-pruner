@@ -22,7 +22,7 @@ def get_repos_json(quay_host, app_token, quay_org):
         return response.json()
 
 
-def get_tags_json(quayURL, appToken, quayOrg, image):
+def get_tags_json(quayUrl, appToken, quayOrg, image):
     baseUrl = f"https://{quayUrl}/api/v1/repository/{quayOrg}/{image}/tag/"
     getHeaders = {'accept': 'application/json', 'Authorization': appToken}
     try:
