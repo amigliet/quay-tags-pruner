@@ -22,16 +22,20 @@ def get_repos_json(quay_host, app_token, quay_org):
         return response.json()
 
 
-def get_tags_json(quayURL, appToken, quayOrg, image):
-    baseUrl = f"https://{quayUrl}/api/v1/repository/{quayOrg}/{image}/tag/"
-    getHeaders = {'accept': 'application/json', 'Authorization': appToken}
+def get_tags_json(quay_host, app_token, quay_org, image):
+    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/"
+    get_headers = {'accept': 'application/json', 'Authorization': app_token}
     try:
-        response = requests.get(baseUrl, headers=getHeaders, timeout=1.0,
-                                verify=False)
+        response = requests.get(
+            base_url,
+            headers=get_headers,
+            timeout=1.0,
+            verify=False
+        )
     except requests.ConnectionError as err:
         logging.exception(f"Connection error: {err}")
-        return None
-    return response.json()
+    else:
+        return response.json()
 
 
 def select_tags_to_remove(tags, pattern, keepTagN):
