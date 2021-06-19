@@ -38,19 +38,19 @@ def get_tags_json(quay_host, app_token, quay_org, image):
         return response.json()
 
 
-def select_tags_to_remove(tags, pattern, keepTagN):
+def select_tags_to_remove(tags, pattern, keep_tag_number):
     matches = []
     for tag in tags["tags"]:
         match = re.search(pattern, tag["name"])
         if match:
             matches.append(tag)
-    matchesLen = len(matches)
-    if matchesLen > keepTagN:
-        endIndex = matchesLen - keepTagN
-        sortedMatches = sorted(matches, key=lambda t: t["start_ts"])
-        return sortedMatches[0:endIndex]
+    matches_len = len(matches)
+    if matches_len > keep_tag_number:
+        end_index = matches_len - keep_tag_number
+        sorted_matches = sorted(matches, key=lambda t: t["start_ts"])
+        return sorted_matches[0:end_index]
     else:
-        return None
+        return []
 
 
 def delete_tags(quayURL, appToken, quayOrg, image, tags):
