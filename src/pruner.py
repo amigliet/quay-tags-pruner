@@ -53,24 +53,27 @@ def select_tags_to_remove(tags, pattern, keep_tag_number):
         return []
 
 
-def delete_tags(quayURL, appToken, quayOrg, image, tags):
-    baseUrl = f"https://{quayUrl}/api/v1/repository/{quayOrg}/{image}/tag"
-    getHeaders = {'accept': 'application/json', 'Authorization': appToken}
+def delete_tags(quay_host, app_token, quay_org, image, tags):
+    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag"
+    get_headers = {'accept': 'application/json', 'Authorization': app_token}
     for tag in tags:
-        deleteUrl = f"{baseUrl}/{tag['name']}"
-        response = requests.delete(deleteUrl, headers=getHeaders, timeout=1.0,
-                                   verify=False)
+        response = requests.delete(
+            f"{base_url}/{tag['name']}",
+            headers=get_headers,
+            timeout=1.0,
+            verify=False
+        )
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 400:
                 logging.info(
-                    f"{quayOrg}/{image}:{tag['name']} has already been deleted"
+                    f"{quay_org}/{image}:{tag['name']} has already been deleted"
                 )
             else:
                 logging.exception(f"Error deleting tag {tag['name']}: {err}")
-            continue
-        logging.info(f"{quayOrg}/{image}:{tag['name']} deleted")
+        else:
+            logging.info(f"{quay_org}/{image}:{tag['name']} deleted")
 
 
 if __name__ == "__main__":
