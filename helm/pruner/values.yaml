@@ -12,6 +12,9 @@ schedule: 30 22 * * *
 startingDeadlineSeconds: 200
 successfulJobsHistoryLimit: 3
 
-secret:
-  auth_json: { "quay_app_token": "<token>" }
+# Env variables
+debug: False
+dryRun: False
+quayAppToken: "<TOKEN>"
+quayUrl: "example-quay-quay-registry.apps.clustername.basedomain.com"
 

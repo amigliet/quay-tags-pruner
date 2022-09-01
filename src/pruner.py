@@ -76,17 +76,14 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
             logging.info(f"{quay_org}/{image}:{tag['name']} deleted")
 
 
+
 if __name__ == "__main__":
 
-    authFile = "/opt/secret/auth.json"
-    try:
-        with open(authFile, "r") as fp:
-            auth_json = json.loads(fp.read())
-    except IOError as err:
-        logging.exception(f"Error reading file {authFile}: {err}")
-        os._exit(1)
+    debug = os.getenv('DEBUG', 'False')
+    dryRun = os.getenv('DRY_RUN', 'False')
 
-    authToken = f"Bearer {auth_json['quay_app_token']}"
+    quayUrl = os.getenv('QUAY_URL')
+    authToken = os.getenv('QUAY_APP_TOKEN')
 
     configFile = "/opt/conf/config.json"
     try:
@@ -96,9 +93,6 @@ if __name__ == "__main__":
         logging.exception(f"Error reading file {configFile}: {err}")
         os._exit(1)
 
-    debug = True if conf_json["vars"]["debug"].upper() == "TRUE" else False
-    dryRun = True if conf_json["vars"]["dry_run"].upper() == "TRUE" else False
-    quayUrl = conf_json["vars"]["quay_url"]
     tags = conf_json["vars"]["tags"]
 
     if debug:

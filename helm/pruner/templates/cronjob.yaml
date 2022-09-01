@@ -12,12 +12,20 @@ spec:
         spec:
           activeDeadlineSeconds: 500
           containers:
-          - image: {{ .Values.image }}
+          - name: quay-tags-pruner
+            env:
+            - name: DEBUG
+              value: {{ .Values.debug }}
+            - name: DRY_RUN
+              value: {{ .Values.dryRun }}
+            - name: QUAY_URL
+              value: {{ .Values.quayUrl }}
+            envFrom:
+            - secretRef:
+                name: quay-tags-pruner-token
+            image: {{ .Values.image }}
             imagePullPolicy:  {{ .Values.imagePullPolicy }}
-            name: quay-tags-pruner
             volumeMounts:
-            - mountPath: /opt/secret
-              name: quay-token
             - mountPath: /opt/conf
               name: quay-config
           dnsPolicy: ClusterFirst
@@ -28,10 +36,6 @@ spec:
               defaultMode: 420
               name: quay-tags-pruner-config
             name: quay-config
-          - name: quay-token
-            secret:
-              defaultMode: 420
-              secretName: quay-tags-pruner-token
   schedule: {{ .Values.schedule }}
   startingDeadlineSeconds: {{ .Values.startingDeadlineSeconds }}
   successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
