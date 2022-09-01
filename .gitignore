@@ -1,0 +1,7 @@
+# Environments
+app-env
+dev-env
+.env
+env
+.venv
+venv
