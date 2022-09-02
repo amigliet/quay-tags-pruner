@@ -1,4 +1,4 @@
-apiVersion: batch/v1beta1
+apiVersion: {{ .Values.cronJobApiVersion }}
 kind: CronJob
 metadata:
   name: quay-tags-pruner
@@ -15,11 +15,11 @@ spec:
           - name: quay-tags-pruner
             env:
             - name: DEBUG
-              value: {{ .Values.debug }}
+              value: "{{ .Values.debug }}"
             - name: DRY_RUN
-              value: {{ .Values.dryRun }}
+              value: "{{ .Values.dryRun }}"
             - name: QUAY_URL
-              value: {{ .Values.quayUrl }}
+              value: "{{ .Values.quayUrl }}"
             envFrom:
             - secretRef:
                 name: quay-tags-pruner-token
