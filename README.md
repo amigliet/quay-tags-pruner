@@ -31,6 +31,22 @@ List of available variables:
     }
 }
 ```
+## Developing
+### Create a developing environment on a workstation to run/debug the application without using container
+
+The following command allows to configure the configuration files:
+
+```
+sudo mkdir -p /opt/conf/
+USER=$(whoami) sudo chown $USER /opt/conf/
+ln -s $PWD/helm/pruner/config.json /opt/conf/config.json
+```
+
+The following command execute the application:
+
+```
+QUAY_URL="<quay_hostname>" QUAY_APP_TOKEN="Bearer <quay_oauth_token>" DEBUG="True" DRY_RUN="True"  python3 src/pruner.py
+```
 
 ## Installation
 ### Build from Dockerfile
@@ -54,4 +70,24 @@ Perform the following steps:
 * Install the Helm chart:
   ```
   $ helm install pruner helm/pruner/
+  ```
+## Usage
+### Run the application manually on Openshift
+Prerequisites:
+* The procedure described in Deploy on OpenShift is completed with success.
+
+Perform the following steps:
+
+* Select the project where the application has been deployed
+  ```
+  $ oc project <project_name> # The name of the project is defined in the variable namespace of the file values.yaml
+  ```
+* Create a Job from the CronJob of the application
+  ```
+  $ oc create job --from=cronjob/quay-tags-pruner "quay-tags-pruner-$(date +%Y%m%d-%H%M)"
+  ```
+* View the logs of the pod created by the Job
+  ```
+  $ oc get pod
+  $ oc logs <pod_name>
   ```

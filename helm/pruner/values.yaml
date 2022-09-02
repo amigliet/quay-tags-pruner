@@ -3,18 +3,20 @@
 
 failedJobsHistoryLimit: 1
 
-image: quay.io/amigliet/quay-tags-pruner:v0.2
+image: quay.io/gsciorti/quay-tags-pruner:v0.3
 imagePullPolicy: IfNotPresent
 
-namespace: demo-cronjobs
+namespace: gsciorti-quay-tags-pruner
 
 schedule: 30 22 * * *
 startingDeadlineSeconds: 200
 successfulJobsHistoryLimit: 3
+cronJobApiVersion: batch/v1
+
 
 # Env variables
-debug: False
+debug: True
 dryRun: False
-quayAppToken: "<TOKEN>"
-quayUrl: "example-quay-quay-registry.apps.clustername.basedomain.com"
+quayAppToken: "Bearer Sh6WkuTy030DWag4nSmDJ2ZugtPKdYfYsDuypwtc"
+quayUrl: "instance-quay-quay-registry.apps.lab01.gpslab.club"
 
