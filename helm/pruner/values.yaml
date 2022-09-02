@@ -11,10 +11,12 @@ namespace: demo-cronjobs
 schedule: 30 22 * * *
 startingDeadlineSeconds: 200
 successfulJobsHistoryLimit: 3
+cronJobApiVersion: batch/v1
+
 
 # Env variables
 debug: False
 dryRun: False
-quayAppToken: "<TOKEN>"
+quayAppToken: "Bearer <TOKEN>"
 quayUrl: "example-quay-quay-registry.apps.clustername.basedomain.com"
 
