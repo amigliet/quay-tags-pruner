@@ -17,6 +17,6 @@ cronJobApiVersion: batch/v1
 # Env variables
 debug: False
 dryRun: False
-quayAppToken: "Bearer <TOKEN>"
+quayAppToken: "<TOKEN>"
 quayUrl: "example-quay-quay-registry.apps.clustername.basedomain.com"
 

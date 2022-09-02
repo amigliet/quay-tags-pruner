@@ -8,7 +8,7 @@ import urllib3
 
 def get_repos_json(quay_host, app_token, quay_org):
     base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}"
-    get_headers = {'accept': 'application/json', 'Authorization': app_token}
+    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     try:
         response = requests.get(
             base_url,
@@ -24,7 +24,7 @@ def get_repos_json(quay_host, app_token, quay_org):
 
 def get_tags_json(quay_host, app_token, quay_org, image):
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/"
-    get_headers = {'accept': 'application/json', 'Authorization': app_token}
+    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     try:
         response = requests.get(
             base_url,
@@ -55,7 +55,7 @@ def select_tags_to_remove(tags, pattern, keep_tag_number):
 
 def delete_tags(quay_host, app_token, quay_org, image, tags):
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag"
-    get_headers = {'accept': 'application/json', 'Authorization': app_token}
+    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     for tag in tags:
         response = requests.delete(
             f"{base_url}/{tag['name']}",
