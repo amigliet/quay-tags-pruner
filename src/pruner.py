@@ -4,6 +4,9 @@ import os
 import re
 import requests
 import urllib3
+import yaml
+
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Disable SSL Warnings
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -108,20 +111,20 @@ if __name__ == "__main__":
         logger.debug(f"Quay App Token: {authToken}")
 
 
-    configFile = "/opt/conf/config.json"
+    configFile = "/opt/conf/config.yaml"
     try:
         with open(configFile, "r") as fp:
-            conf_json = json.loads(fp.read())
+            conf_yaml = yaml.safe_load(fp.read())
     except IOError as err:
         logger.exception(f"Error reading file {configFile}: {err}")
         os._exit(1)
 
-    tags = conf_json["vars"]["tags"]
+    tags = conf_yaml["vars"]["tags"]
 
-    logger.info(f"Organizations found: {conf_json['vars']['quay_orgs']}")
+    logger.info(f"Organizations found: {conf_yaml['vars']['quay_orgs']}")
     logger.info(f"Tags: {tags}")
 
-    for org in conf_json["vars"]["quay_orgs"]:
+    for org in conf_yaml["vars"]["quay_orgs"]:
         repos = get_repos_json(quayUrl, authToken, org)
         if repos is None:
             continue

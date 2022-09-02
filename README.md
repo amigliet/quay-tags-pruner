@@ -13,24 +13,17 @@ This application:
 List of available variables:
 
 ```
-{
-    "vars": {
-        "debug": "True",
-        "dry_run": "False",
-        "quay_url": "example-quay-quay-registry.apps.cluster-name.base-domain.com",
-        "quay_orgs": [
-            "library",
-            "amigliet"
-        ],
-        "tags": [
-            {
-                "pattern": ".",
-                "revisions": "5"
-            }
-        ]
-    }
-}
+vars:
+  debug: True
+  dry_run: False
+  quay_orgs:
+    - library
+    - amigliet
+  tags:
+    pattern: "."
+    revisions: "5"
 ```
+
 ## Developing
 ### Create a developing environment on a workstation to run/debug the application without using container
 
@@ -39,7 +32,7 @@ The following command allows to configure the configuration files:
 ```
 sudo mkdir -p /opt/conf/
 USER=$(whoami) sudo chown $USER /opt/conf/
-ln -s $PWD/helm/pruner/config.json /opt/conf/config.json
+ln -s $PWD/helm/pruner/config.yaml /opt/conf/config.yaml
 ```
 
 The following command execute the application:
