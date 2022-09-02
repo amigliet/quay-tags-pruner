@@ -45,7 +45,7 @@ ln -s $PWD/helm/pruner/config.json /opt/conf/config.json
 The following command execute the application:
 
 ```
-QUAY_URL="<quay_hostname>" QUAY_APP_TOKEN="Bearer <quay_oauth_token>" DEBUG="True" DRY_RUN="True"  python3 src/pruner.py
+QUAY_URL="<quay_hostname>" QUAY_APP_TOKEN="<quay_oauth_token>" DEBUG="True" DRY_RUN="True"  python3 src/pruner.py
 ```
 
 ## Installation
