@@ -5,6 +5,22 @@ import re
 import requests
 import urllib3
 
+# Disable SSL Warnings
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+def setup_logger():
+    logger = logging.getLogger('pruner')
+    logger.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
+    ch.setFormatter(formatter)
+
+    logger.addHandler(ch)
+    return logger
+
 
 def get_repos_json(quay_host, app_token, quay_org):
     base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}"
@@ -79,47 +95,38 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
 
 if __name__ == "__main__":
 
-    debug = os.getenv('DEBUG', 'False')
-    dryRun = os.getenv('DRY_RUN', 'False')
+    logger = setup_logger()
 
+    debug = True if os.getenv('DEBUG', 'False').upper() == 'TRUE' else False
+    dryRun = True if os.getenv('DRY_RUN', 'False').upper() == 'TRUE' else False
     quayUrl = os.getenv('QUAY_URL')
     authToken = os.getenv('QUAY_APP_TOKEN')
+
+    logger.info(f"Quay URL: {quayUrl}")
+    logger.info(debug)
+    if debug:
+        logger.debug(f"Quay App Token: {authToken}")
+
 
     configFile = "/opt/conf/config.json"
     try:
         with open(configFile, "r") as fp:
             conf_json = json.loads(fp.read())
     except IOError as err:
-        logging.exception(f"Error reading file {configFile}: {err}")
+        logger.exception(f"Error reading file {configFile}: {err}")
         os._exit(1)
 
     tags = conf_json["vars"]["tags"]
 
-    if debug:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s: %(message)s',
-            datefmt='%Y/%m/%d %H:%M:%S',
-            level=logging.DEBUG
-        )
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s: %(message)s',
-            datefmt='%Y/%m/%d %H:%M:%S',
-            level=logging.INFO
-        )
-        urllib3.disable_warnings()
-
-    logging.info(f"Quay URL: {quayUrl}")
-    logging.debug(f"Quay App Token: {authToken}")
-    logging.info(f"Organizations found: {conf_json['vars']['quay_orgs']}")
-    logging.info(f"Tags: {tags}")
+    logger.info(f"Organizations found: {conf_json['vars']['quay_orgs']}")
+    logger.info(f"Tags: {tags}")
 
     for org in conf_json["vars"]["quay_orgs"]:
         repos = get_repos_json(quayUrl, authToken, org)
         if repos is None:
             continue
 
-        logging.debug(f"{json.dumps(repos, indent=4)}")
+        logger.debug(f"{json.dumps(repos, indent=4)}")
 
         for image in repos["repositories"]:
             for tag in tags:
@@ -131,14 +138,14 @@ if __name__ == "__main__":
                 badTags = select_tags_to_remove(imageTags, tag["pattern"],
                                                 int(tag["revisions"]))
                 if badTags is None:
-                    logging.info(
+                    logger.info(
                         f"No tags to delete found for image {image['name']} "
                         f"with pattern {tag['pattern']}"
                     )
                     continue
 
                 if dryRun:
-                    logging.info(
+                    logger.info(
                         f"DRY-RUN Candidate tags for deletion "
                         f"for image {image['name']}: "
                         f"{json.dumps(badTags, indent=4)}"
