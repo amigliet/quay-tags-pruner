@@ -13,15 +13,27 @@ This application:
 List of available variables:
 
 ```
-vars:
-  debug: True
-  dry_run: False
-  quay_orgs:
-    - library
-    - amigliet
-  tags:
-    pattern: "."
-    revisions: "5"
+rules:
+  - organization_list:
+      - org1
+      - org2
+    parameters:
+    - tag_filter: "."
+      keep_n_tags: "5"
+      keep_tags_younger_than: "1y"
+  - organization_list:
+      - org3
+    parameters:
+    - tag_filter: "."
+      keep_n_tags: "15"
+      keep_tags_younger_than: "1y"
+
+default_rule:
+  enabled: True
+  parameters:
+    - tag_filter: "."
+      keep_n_tags: "10"
+      keep_tags_younger_than: "2y"
 ```
 
 ## Developing
@@ -59,7 +71,7 @@ Perform the following steps:
 * Create an OAuth access token on Quay with the right permissions
 * Edit the following files:
   - `helm/pruner/values.yaml`
-  - `helm/pruner/config.json`
+  - `helm/pruner/config.yaml`
 * Install the Helm chart:
   ```
   $ helm install pruner helm/pruner/
