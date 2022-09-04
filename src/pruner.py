@@ -36,7 +36,7 @@ def get_orgs_json(quay_host, app_token):
             verify=False
         )
     except requests.ConnectionError as err:
-        logging.exception(f"Connection error: {err}")
+        logger.exception(f"Connection error: {err}")
     else:
         return response.json()
 
@@ -62,7 +62,7 @@ def get_repos_json(quay_host, app_token, quay_org):
             verify=False
         )
     except requests.ConnectionError as err:
-        logging.exception(f"Connection error: {err}")
+        logger.exception(f"Connection error: {err}")
     else:
         return response.json()
 
@@ -78,7 +78,7 @@ def get_tags_json(quay_host, app_token, quay_org, image):
             verify=False
         )
     except requests.ConnectionError as err:
-        logging.exception(f"Connection error: {err}")
+        logger.exception(f"Connection error: {err}")
     else:
         return response.json()
 
@@ -112,13 +112,13 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 400:
-                logging.info(
+                logger.info(
                     f"{quay_org}/{image}:{tag['name']} has already been deleted"
                 )
             else:
-                logging.exception(f"Error deleting tag {tag['name']}: {err}")
+                logger.exception(f"Error deleting tag {tag['name']}: {err}")
         else:
-            logging.info(f"{quay_org}/{image}:{tag['name']} deleted")
+            logger.info(f"{quay_org}/{image}:{tag['name']} deleted")
 
 
 def apply_pruner_rule(
