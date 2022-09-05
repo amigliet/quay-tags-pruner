@@ -35,6 +35,13 @@ def get_orgs_json(quay_host, app_token):
             timeout=5.0,
             verify=False
         )
+
+        if response.status_code != 200:
+            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
+                             f"API response reason: {response.reason}\n"
+                             f"API response text: {response.text}")
+            os._exit(1)
+
     except requests.ConnectionError as err:
         logger.exception(f"Connection error: {err}")
     else:
@@ -61,6 +68,13 @@ def get_repos_json(quay_host, app_token, quay_org):
             timeout=5.0,
             verify=False
         )
+
+        if response.status_code != 200:
+            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
+                             f"API response reason: {response.reason}\n"
+                             f"API response text: {response.text}")
+            os._exit(1)
+
     except requests.ConnectionError as err:
         logger.exception(f"Connection error: {err}")
     else:
@@ -77,6 +91,13 @@ def get_tags_json(quay_host, app_token, quay_org, image):
             timeout=5.0,
             verify=False
         )
+
+        if response.status_code != 200:
+            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
+                             f"API response reason: {response.reason}\n"
+                             f"API response text: {response.text}")
+            os._exit(1)
+
     except requests.ConnectionError as err:
         logger.exception(f"Connection error: {err}")
     else:
@@ -108,6 +129,13 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
             timeout=5.0,
             verify=False
         )
+
+        if response.status_code != 200:
+            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
+                             f"API response reason: {response.reason}\n"
+                             f"API response text: {response.text}")
+            os._exit(1)
+
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
