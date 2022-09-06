@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import os
@@ -5,6 +6,7 @@ import re
 import requests
 import urllib3
 import yaml
+import time
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
@@ -104,19 +106,101 @@ def get_tags_json(quay_host, app_token, quay_org, image):
         return response.json()
 
 
-def select_tags_to_remove(tags, pattern, keep_tag_number):
+# This function can be used to print tags' list of dictionary in logs printing only important tags' values
+# This function accepts as input a list of dictionary and return as result the same list of dict removing the dict keys
+# different from [name,start_ts,last_modified]
+def prettify_tag_list_of_dict(input_list):
+    result = []
+    for tag in input_list:
+        result.append({
+                     "name" : tag["name"],
+                     "last_modified": tag["last_modified"],
+                     "start_ts": tag["start_ts"]
+                      }
+        )
+    return result
+
+
+# This function selects and returns the tags that need to be removed based on the values defined in the variable
+# parameter
+def select_tags_to_remove(organization,repository,tags, parameter, current_ts):
+    logger.debug(
+        f"Invoke function select_tags_to_remove with the following parameters:\n"
+        f"organization {organization}\n"
+        f"repository {repository}\n"
+        f"tags {tags}\n"
+        f"parameter {parameter}\n"
+        f"current_ts {current_ts}\n"
+    )
+
+    # The dictionary parameter must be contains at least one of the two keys keep_tags_younger_than and keep_n_tags
+    if 'keep_n_tags' not in parameter.keys() and 'keep_tags_younger_than' not in parameter.keys():
+        logger.error(
+            f"Error: The dictionary parameter of repository {repository} of the organization {organization} must "
+            f"contain at least one of the following parameters: keep_n_tags keep_tags_younger_than")
+        os._exit(1)
+
+    # Filter tags based on the regular expression defined in tag_filter
+    pattern=parameter["tag_filter"]
     matches = []
     for tag in tags["tags"]:
         match = re.search(pattern, tag["name"])
         if match:
             matches.append(tag)
     matches_len = len(matches)
-    if matches_len > keep_tag_number:
-        end_index = matches_len - keep_tag_number
-        sorted_matches = sorted(matches, key=lambda t: t["start_ts"])
-        return sorted_matches[0:end_index]
-    else:
-        return []
+
+    # If keep_n_tags is defined in parameter, filter the tags that needs to be deleted based on this condition and store
+    # them in tag_deleted_by_keep_tag_number
+    if "keep_n_tags" in parameter.keys():
+        keep_tag_number=int(parameter["keep_n_tags"])
+        if matches_len > keep_tag_number:
+            end_index = matches_len - keep_tag_number
+            sorted_matches = sorted(matches, key=lambda t: t["start_ts"])
+            tag_deleted_by_keep_tag_number = sorted_matches[0:end_index]
+        else:
+            tag_deleted_by_keep_tag_number = []
+        logger.debug (f"The tags of the organization '{organization}' and repository '{repository}' that can be "
+                      f"deleted based on parameter 'keep_n_tags: '{keep_tag_number}' are: "
+                      f"{json.dumps(prettify_tag_list_of_dict(tag_deleted_by_keep_tag_number), indent=4)} ")
+
+    # If keep_tags_younger_than is defined in parameter, filter the tags that needs to be deleted based on this
+    # condition and store them in tag_deleted_by_keep_tags_younger_than
+    if "keep_tags_younger_than" in parameter.keys():
+        keep_tags_younger_than = int(parameter["keep_tags_younger_than"])
+        # the unit of measure of keep_tags_younger_than is days,keep_tags_younger_than_seconds convert it in seconds
+        keep_tags_younger_than_seconds=keep_tags_younger_than*24*3600
+        # Select tags if the different between current timestamp and the tag start_ts value is greater than
+        # keep_tags_younger_than_seconds
+        tag_deleted_by_keep_tags_younger_than=[tag for tag in matches
+                                                   if (current_ts - tag["start_ts"] ) >  keep_tags_younger_than_seconds
+                                               ]
+        logger.debug(f"The tags of the organization '{organization}' and repository '{repository}' that can be deleted "
+                     f"based on parameter 'keep_tags_younger_than: '{keep_tags_younger_than}' are: "
+                     f"{json.dumps(prettify_tag_list_of_dict(tag_deleted_by_keep_tags_younger_than), indent=4)}")
+
+    result=[]
+    # If keep_n_tags and keep_tags_younger_than parameters are both defined, the function return the intersection of
+    # both list tag_deleted_by_keep_tag_number tag_deleted_by_keep_tags_younger_than
+    # A tag will be selected to be deleted only if tag is present in tag_deleted_by_keep_tag_number and
+    # tag_deleted_by_keep_tags_younger_than
+    if 'keep_n_tags' in parameter.keys() and 'keep_tags_younger_than' in parameter.keys():
+        for tag1 in tag_deleted_by_keep_tag_number:
+            if any(tag2['name'] == tag1['name'] for tag2 in tag_deleted_by_keep_tags_younger_than):
+                result.append(copy.deepcopy(tag1))
+
+    # If keep_n_tags parameter is defined and keep_tags_younger_than parameter is not defined, the function returns the
+    # tag deleted based on the condition keep_n_tags
+    elif 'keep_n_tags' in parameter.keys() and 'keep_tags_younger_than' not in parameter.keys():
+        result=tag_deleted_by_keep_tag_number
+    # If tag_deleted_by_keep_tags_younger_than parameter is defined and keep_n_tags parameter is not defined, the
+    # function returns the tag deleted based on the condition tag_deleted_by_keep_tags_younger_than
+    elif 'keep_tags_younger_than' in parameter.keys() and 'keep_n_tags' not in parameter.keys():
+        result=tag_deleted_by_keep_tags_younger_than
+
+    logger.info(f"The tags of the organization '{organization}' and repository '{repository}' that can be deleted "
+                f"based on all the parameters '{parameter}' are: "
+                f"{json.dumps( prettify_tag_list_of_dict(result),indent=4 )}")
+    return result
 
 
 def delete_tags(quay_host, app_token, quay_org, image, tags):
@@ -152,6 +236,15 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
 def apply_pruner_rule(
         quay_host, app_token, organization,
         parameters, debug, dry_run):
+    logger.debug(
+        f"Invoke function apply_pruner_rule with the following parameters:\n"
+        f"quay_host {quay_host}\n"
+        f"app_token {app_token}\n"
+        f"organization {organization}\n"
+        f"parameters {parameters}\n"
+        f"debug {debug}\n"
+        f"dry_run {dry_run}"
+    )
 
     repos = get_repos_json(quay_host, app_token, organization)
     if repos is None:
@@ -169,8 +262,8 @@ def apply_pruner_rule(
             if image_tags is None:
                 continue
 
-            bad_tags = select_tags_to_remove(image_tags, param["tag_filter"],
-                                             int(param["keep_n_tags"]))
+            current_ts=int(time.time())
+            bad_tags = select_tags_to_remove(organization,image["name"],image_tags, param, current_ts)
             if bad_tags is None:
                 logger.info(
                     f"No tags to delete found for image {image['name']} "
@@ -182,7 +275,7 @@ def apply_pruner_rule(
                 logger.info(
                     f"DRY-RUN Candidate tags for deletion "
                     f"for image {image['name']}: "
-                    f"{json.dumps(bad_tags, indent=4)}"
+                    f"{json.dumps( prettify_tag_list_of_dict(bad_tags) , indent=4) }"
                 )
             else:
                 delete_tags(quay_host, app_token, organization,

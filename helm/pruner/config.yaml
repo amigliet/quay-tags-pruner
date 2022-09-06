@@ -5,17 +5,17 @@ rules:
     parameters:
     - tag_filter: "."
       keep_n_tags: "5"
-      keep_tags_younger_than: "1y"
+      keep_tags_younger_than: "90"
   - organization_list:
       - org3
     parameters:
     - tag_filter: "."
       keep_n_tags: "15"
-      keep_tags_younger_than: "1y"
+      keep_tags_younger_than: "90"
 
 default_rule:
   enabled: True
   parameters:
     - tag_filter: "."
       keep_n_tags: "10"
-      keep_tags_younger_than: "2y"
+      keep_tags_younger_than: "30"
