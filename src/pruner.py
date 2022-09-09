@@ -107,7 +107,7 @@ def get_repos_json(quay_host, app_token, quay_org):
 def get_tags_json(quay_host, app_token, quay_org, image):
     page=1
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
-    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?page={page}"
+    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?onlyActiveTags=True&page={page}"
     try:
         response = requests.get(
             base_url,
@@ -126,7 +126,7 @@ def get_tags_json(quay_host, app_token, quay_org, image):
         # Manage repository with more than 50 tags using pagination
         while response.json()["has_additional"]:
             page += 1
-            base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?page={page}"
+            base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?onlyActiveTags=True&page={page}"
 
             response = requests.get(
                 base_url,
