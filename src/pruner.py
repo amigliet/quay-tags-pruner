@@ -77,15 +77,37 @@ def get_repos_json(quay_host, app_token, quay_org):
                              f"API response text: {response.text}")
             os._exit(1)
 
+        result = response.json()
+
+        # Manage organization with more than 100 repositories using pagination
+        while 'next_page' in response.json().keys():
+            next_page = response.json()["next_page"]
+            base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}&next_page={next_page}"
+
+            response = requests.get(
+                base_url,
+                headers=get_headers,
+                timeout=5.0,
+                verify=False
+            )
+            if response.status_code != 200:
+                logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
+                                 f"API response reason: {response.reason}\n"
+                                 f"API response text: {response.text}")
+                os._exit(1)
+
+            result["repositories"].extend(copy.deepcopy(response.json()["repositories"]))
+
     except requests.ConnectionError as err:
         logger.exception(f"Connection error: {err}")
     else:
-        return response.json()
+        return result
 
 
 def get_tags_json(quay_host, app_token, quay_org, image):
-    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/"
+    page=1
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
+    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?page={page}"
     try:
         response = requests.get(
             base_url,
@@ -99,11 +121,30 @@ def get_tags_json(quay_host, app_token, quay_org, image):
                              f"API response reason: {response.reason}\n"
                              f"API response text: {response.text}")
             os._exit(1)
+        result = response.json()
+
+        # Manage repository with more than 50 tags using pagination
+        while response.json()["has_additional"]:
+            page += 1
+            base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?page={page}"
+
+            response = requests.get(
+                base_url,
+                headers=get_headers,
+                timeout=5.0,
+                verify=False
+            )
+            if response.status_code != 200:
+                logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
+                             f"API response reason: {response.reason}\n"
+                             f"API response text: {response.text}")
+                os._exit(1)
+            result["tags"].extend(copy.deepcopy(response.json()["tags"]))
 
     except requests.ConnectionError as err:
         logger.exception(f"Connection error: {err}")
     else:
-        return response.json()
+        return result
 
 
 # This function can be used to print tags' list of dictionary in logs printing only important tags' values
@@ -214,7 +255,7 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
             verify=False
         )
 
-        if response.status_code != 200:
+        if response.status_code != 204 and response.status_code != 200:
             logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
                              f"API response reason: {response.reason}\n"
                              f"API response text: {response.text}")
