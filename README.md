@@ -172,6 +172,96 @@ The following command executes the application:
 QUAY_URL="<quay_hostname>" QUAY_APP_TOKEN="<quay_oauth_token>" DEBUG="True" DRY_RUN="True"  python3 src/pruner.py
 ```
 
+### Run quay-tags-pruner container with podman using the script pruner.py as entrypoint
+
+```
+# Verify that the localhost/pruner:latest image has been build as described in the paragraph "Build from Dockerfile"
+$ podman images localhost/pruner:latest
+REPOSITORY        TAG         IMAGE ID      CREATED      SIZE
+localhost/pruner  latest      9357e815a5f8  3 hours ago  298 MB
+
+# Create the podman volume pruner_conf_directory
+$ podman volume create pruner_conf_directory
+
+# Create the container
+# Note: Replace the strings "<True|False>" "<INSERT_THE_QUAY_APP_TOKEN>" "<INSERT_THE_QUAY_URL>" with the appropriate
+# values for your environment
+$ podman create --name pruner                                    \
+                --user 1001                                      \
+                -v pruner_config_directory:/opt/conf             \
+                --env DEBUG=<True|False>                         \
+                --env DRY_RUN=<True|False>                       \
+                --env QUAY_APP_TOKEN=<INSERT_THE_QUAY_APP_TOKEN> \
+                --env QUAY_URL=<INSERT_THE_QUAY_URL>             \
+                localhost/pruner:latest
+
+# Copy the config.yaml file to the podman volume pruner_conf_directory
+$ podman cp --archive helm/pruner/config.yaml pruner:/opt/conf
+
+# Start the container
+$ podman start pruner
+
+# Verify the status of the container. The script ends when the pruner.py script ends
+
+$ podman ps -a --filter name=pruner
+CONTAINER ID  IMAGE                    COMMAND     CREATED         STATUS                     PORTS       NAMES
+01d95edb7b1f  localhost/pruner:latest              54 seconds ago  Exited (0) 39 seconds ago              pruner
+
+# Verify the logs of the container, this logs container the output of the script
+$ podman logs pruner
+```
+
+### Run quay-tags-pruner container with podman using the shell bash and run manually the script pruner.py
+
+```
+# Verify that the localhost/pruner:latest image has been build as described in the paragraph "Build from Dockerfile"
+$ podman images localhost/pruner:latest
+REPOSITORY        TAG         IMAGE ID      CREATED      SIZE
+localhost/pruner  latest      9357e815a5f8  3 hours ago  298 MB
+
+# Create the podman volume pruner_conf_directory
+$ podman volume create pruner_conf_directory
+
+# Create the container
+# Note: Replace the strings "<True|False>" "<INSERT_THE_QUAY_APP_TOKEN>" "<INSERT_THE_QUAY_URL>" with the appropriate
+# values of your environment
+$ podman create --name pruner                                    \
+              --user 1001                                        \
+              -v pruner_config_directory:/opt/conf               \
+              --env DEBUG=<True|False>                           \
+              --env DRY_RUN=<True|False>                         \
+              --env QUAY_APP_TOKEN=<INSERT_THE_QUAY_APP_TOKEN>   \
+              --env QUAY_URL=<INSERT_THE_QUAY_URL>               \
+              --entrypoint="/bin/bash"                           \
+              -ti                                                \
+              localhost/pruner:latest
+
+# Copy the config.yaml file to the podman volume pruner_conf_directory
+$ podman cp --archive helm/pruner/config.yaml pruner:/opt/conf
+
+# Start the container
+$ podman start pruner
+
+# Open a bash session on the container
+$ podman exec -ti pruner /bin/bash
+
+# Run the python script /usr/bin/pruner.py using the interpeter /usr/bin/python3.8
+$ /usr/bin/python3.8 -u /usr/bin/pruner.py
+```
+
+### Clean podman environment after the execution of the quay-tags-pruner container
+
+```
+# Stop the container
+$ podman stop pruner
+
+# Remove the container
+$ podman rm pruner
+
+# Remove the podman volume pruner_conf_directory
+$ podman volume rm pruner_conf_directory
+```
+
 ## Installation
 ### Build from Dockerfile
 
