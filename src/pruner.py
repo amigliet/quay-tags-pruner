@@ -238,7 +238,7 @@ def select_tags_to_remove(organization,repository,tags, parameter, current_ts):
     elif 'keep_tags_younger_than' in parameter.keys() and 'keep_n_tags' not in parameter.keys():
         result=tag_deleted_by_keep_tags_younger_than
 
-    logger.info(f"The tags of the organization '{organization}' and repository '{repository}' that can be deleted "
+    logger.debug(f"The tags of the organization '{organization}' and repository '{repository}' that can be deleted "
                 f"based on all the parameters '{parameter}' are: "
                 f"{json.dumps( prettify_tag_list_of_dict(result),indent=4 )}")
     return result
@@ -269,7 +269,7 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
                     f"{quay_org}/{image}:{tag['name']} has already been deleted"
                 )
             else:
-                logger.exception(f"Error deleting tag {tag['name']}: {err}")
+                logger.exception(f"Error deleting tag {tag['name']} of the image {quay_org}/{image}: {err}")
         else:
             logger.info(f"{quay_org}/{image}:{tag['name']} deleted")
 
@@ -313,11 +313,11 @@ def apply_pruner_rule(
                 continue
 
             if dry_run:
-                logger.info(
-                    f"DRY-RUN Candidate tags for deletion "
-                    f"for image {image['name']}: "
-                    f"{json.dumps( prettify_tag_list_of_dict(bad_tags) , indent=4) }"
-                )
+                for tag in prettify_tag_list_of_dict(bad_tags):
+                    logger.info( f"DRY-RUN Candidate tags for deletion "
+                                 f"for image {organization} / {image['name']}:{tag['name']}"
+                                 f"\t\tlast_modified: {tag['last_modified']} \tstart_ts: {tag['start_ts']}"
+                                 )
             else:
                 delete_tags(quay_host, app_token, organization,
                             image["name"], bad_tags)
