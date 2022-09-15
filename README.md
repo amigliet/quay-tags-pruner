@@ -305,3 +305,49 @@ Perform the following steps:
   $ oc get pod
   $ oc logs <pod_name>
   ```
+
+## Troubleshooting
+This chapter describes some useful command to verify and check the previous executions of the quay-adm-pruner application
+
+### Verify status and logs of the previous execution of the quay-adm-pruner
+
+* Select the project where quay-adm-pruner has been deployed(defined in the variable "namespace" of the file
+ helm/pruner/values.yaml)
+```
+$ oc project <project_name>
+```
+
+* View the past execution of the quay-adm-pruner listing the pods in the namespace
+
+```
+$ oc get pod
+NAME                                 READY   STATUS      RESTARTS   AGE
+quay-tags-pruner-27719910--1-d4wwz   0/1     Completed   0          9h
+quay-tags-pruner-27720492--1-sjfdl   0/1     Completed   0          4m11s
+quay-tags-pruner-27720494--1-pqdhf   0/1     Completed   0          2m11s
+quay-tags-pruner-27720496--1-4hd6d   0/1     Error       0          11s
+```
+
+The following list report the description of the most common STATUS value:
+1) Completed: The quay-adm-pruner application ended with success(status code: 0)
+2) Error: The quay-adm-pruner application ended with an error(status code: 0)
+3) Running: The quay-adm-pruner application is still running
+
+* View the logs of the application quay-adm-pruner
+```
+  $ oc logs <pod_name>
+```
+
+* To analyze complex errors in pod logs could be useful to start a debug pod of the failed pod running with the same
+  user(not root) used regularly from the application and run the application from the container
+
+$ oc debug pod/<pod_name>
+Starting pod/quay-tags-pruner-27720510--1-dvjpz-debug ...
+sh-4.4$ python3.8 -u /usr/bin/pruner.py
+
+* You can also start a debug pod with root access. quay-tags-pruner pod typically run with non-root privileges, but
+  running troubleshooting pods with temporary root privileges can be useful during further issue investigation.
+
+$ oc debug --as-root pod/<pod_name>
+Starting pod/quay-tags-pruner-27720510--1-dvjpz-debug ...
+sh-4.4$ python3.8 -u /usr/bin/pruner.py
