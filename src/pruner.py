@@ -9,6 +9,7 @@ import yaml
 import time
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from prunerLib import checkConfiguration
 
 # Disable SSL Warnings
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -327,6 +328,8 @@ if __name__ == "__main__":
 
     logger = setup_logger()
 
+    checkConfiguration.check_environment_variables(logger)
+
     debug = True if os.getenv('DEBUG', 'False').upper() == 'TRUE' else False
     dryRun = True if os.getenv('DRY_RUN', 'False').upper() == 'TRUE' else False
     quayUrl = os.getenv('QUAY_URL')
@@ -343,6 +346,8 @@ if __name__ == "__main__":
             conf_yaml = yaml.safe_load(fp.read())
         if debug:
             logger.debug(f"Loaded file config.yaml:\n{yaml.dump(conf_yaml)}")
+        checkConfiguration.check_configuration_file(logger, conf_yaml)
+
     except IOError as err:
         logger.exception(f"Error reading file {configFile}: {err}")
         os._exit(1)
