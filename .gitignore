@@ -5,3 +5,4 @@ dev-env
 env
 .venv
 venv
+__pycache__
