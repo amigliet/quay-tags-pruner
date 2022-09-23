@@ -3,20 +3,15 @@ import json
 import logging
 import os
 import re
-import requests
-import urllib3
 import yaml
 import time
-
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from prunerLib import checkConfiguration
+from prunerLib import quayApi
 
-# Disable SSL Warnings
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 def setup_logger():
-    logger = logging.getLogger('pruner')
-    logger.setLevel(logging.DEBUG)
+    logger_initialization = logging.getLogger('pruner')
+    logger_initialization.setLevel(logging.DEBUG)
 
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
@@ -24,49 +19,12 @@ def setup_logger():
     formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
     ch.setFormatter(formatter)
 
-    logger.addHandler(ch)
-    return logger
-
-
-# This exception is raise when the api call "https://{quay_host}/api/v1/superuser/organizations/" return the error
-# "status": 403 "error_message": "Unauthorized", "error_type": "insufficient_scope"
-# It means that the QUAY_TOKEN used hasn't the superuser privileges to call this api
-class ErrorAPIResponse403InsufficientScope(Exception):
-    """Base class for other exceptions"""
-    pass
-
-
-def get_orgs_json(quay_host, app_token):
-    base_url = f"https://{quay_host}/api/v1/superuser/organizations/"
-    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
-    try:
-        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
-                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
-        response = requests.get(
-            base_url,
-            headers=get_headers,
-            timeout=5.0,
-            verify=False
-        )
-        logger.debug(f"API Response: {response.json()}")
-
-        if response.status_code == 403 and response.json()["error_message"] == "Unauthorized" and \
-           response.json()["error_type"] == "insufficient_scope":
-            raise ErrorAPIResponse403InsufficientScope
-        elif response.status_code != 200:
-            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                             f"API response reason: {response.reason}\n"
-                             f"API response text: {response.text}")
-            os._exit(1)
-
-    except requests.ConnectionError as err:
-        logger.exception(f"Connection error: {err}")
-    else:
-        return response.json()
+    logger_initialization.addHandler(ch)
+    return logger_initialization
 
 
 def get_orgs_list(quay_host, app_token):
-    org_list_json = get_orgs_json(quay_host, app_token)
+    org_list_json = quayApi.get_orgs_json(logger, quay_host, app_token)
 
     org_list = []
     for o in org_list_json["organizations"]:
@@ -75,137 +33,12 @@ def get_orgs_list(quay_host, app_token):
     return org_list
 
 
-def get_repo_list_json(quay_host, app_token, quay_org):
-    base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}"
-    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
-    try:
-        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
-                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
-        response = requests.get(
-            base_url,
-            headers=get_headers,
-            timeout=5.0,
-            verify=False
-        )
-        logger.debug(f"API Response: {response.json()}")
-
-        if response.status_code != 200:
-            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                             f"API response reason: {response.reason}\n"
-                             f"API response text: {response.text}")
-            os._exit(1)
-        result = response.json()
-
-        # Manage organization with more than 100 repositories using pagination
-        while 'next_page' in response.json().keys():
-            next_page = response.json()["next_page"]
-            base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}&next_page={next_page}"
-
-            logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
-                         "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
-            response = requests.get(
-                base_url,
-                headers=get_headers,
-                timeout=5.0,
-                verify=False
-            )
-            logger.debug(f"API Response: {response.json()}")
-
-            if response.status_code != 200:
-                logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                                 f"API response reason: {response.reason}\n"
-                                 f"API response text: {response.text}")
-                os._exit(1)
-
-            result["repositories"].extend(copy.deepcopy(response.json()["repositories"]))
-
-    except requests.ConnectionError as err:
-        logger.exception(f"Connection error: {err}")
-    else:
-        return result
-
-
-# Get information of a specific repository
-def get_repo_json(quay_host, app_token, quay_org, image):
-    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
-    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}"
-    try:
-        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
-                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
-        response = requests.get(
-            base_url,
-            headers=get_headers,
-            timeout=5.0,
-            verify=False
-        )
-        logger.debug(f"API Response: {response.json()}")
-
-        if response.status_code != 200:
-            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                             f"API response reason: {response.reason}\n"
-                             f"API response text: {response.text}")
-            os._exit(1)
-        result = response.json()
-    except requests.ConnectionError as err:
-        logger.exception(f"Connection error: {err}")
-    else:
-        return result
-
-
 # Get the parameter state of a repository ( used to extract the state and skip repo with state MIRROR or READ_ONLY)
 def get_repo_state_parameter(quay_host, app_token, quay_org, image):
-    api_response=get_repo_json(quay_host, app_token, quay_org, image)
+    api_response=quayApi.get_repo_json(logger, quay_host, app_token, quay_org, image)
     return api_response["state"]
 
 
-def get_tags_json(quay_host, app_token, quay_org, image):
-    page=1
-    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
-    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?onlyActiveTags=True&page={page}"
-    try:
-        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
-                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
-        response = requests.get(
-            base_url,
-            headers=get_headers,
-            timeout=5.0,
-            verify=False
-        )
-        logger.debug(f"API Response: {response.json()}")
-
-        if response.status_code != 200:
-            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                             f"API response reason: {response.reason}\n"
-                             f"API response text: {response.text}")
-            os._exit(1)
-        result = response.json()
-
-        # Manage repository with more than 50 tags using pagination
-        while response.json()["has_additional"]:
-            page += 1
-            base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?onlyActiveTags=True&page={page}"
-
-            logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
-                         "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
-            response = requests.get(
-                base_url,
-                headers=get_headers,
-                timeout=5.0,
-                verify=False
-            )
-            logger.debug(f"API Response: {response.json()}")
-
-            if response.status_code != 200:
-                logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                             f"API response reason: {response.reason}\n"
-                             f"API response text: {response.text}")
-                os._exit(1)
-            result["tags"].extend(copy.deepcopy(response.json()["tags"]))
-
-    except requests.ConnectionError as err:
-        logger.exception(f"Connection error: {err}")
-    else:
-        return result
 
 
 # This function can be used to print tags' list of dictionary in logs printing only important tags' values
@@ -305,39 +138,6 @@ def select_tags_to_remove(organization,repository,tags, parameter, current_ts):
     return result
 
 
-def delete_tags(quay_host, app_token, quay_org, image, tags):
-    base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag"
-    get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
-    for tag in tags:
-        logger.debug(f"Invoke API Request Type: DELETE URL:{base_url} with the following headers: "
-                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
-        response = requests.delete(
-            f"{base_url}/{tag['name']}",
-            headers=get_headers,
-            timeout=5.0,
-            verify=False
-        )
-        logger.debug(f"API Response: {response.json()}")
-
-        if response.status_code != 204 and response.status_code != 200:
-            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                             f"API response reason: {response.reason}\n"
-                             f"API response text: {response.text}")
-            os._exit(1)
-
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as err:
-            if response.status_code == 400:
-                logger.info(
-                    f"{quay_org}/{image}:{tag['name']} has already been deleted"
-                )
-            else:
-                logger.exception(f"Error deleting tag {tag['name']} of the image {quay_org}/{image}: {err}")
-        else:
-            logger.info(f"{quay_org}/{image}:{tag['name']} deleted")
-
-
 def apply_pruner_rule(
         quay_host, app_token, organization,
         parameters, debug, dry_run):
@@ -351,7 +151,7 @@ def apply_pruner_rule(
         f"dry_run {dry_run}"
     )
 
-    repos = get_repo_list_json(quay_host, app_token, organization)
+    repos = quayApi.get_repo_list_json(logger, quay_host, app_token, organization)
     if repos is None:
        return
 
@@ -370,8 +170,7 @@ def apply_pruner_rule(
 
         for param in parameters:
             logger.info(f"Apply filter: {param['tag_filter']}")
-            image_tags = get_tags_json(quay_host, app_token, organization,
-                                       image["name"])
+            image_tags = quayApi.get_tags_json(logger,quay_host, app_token, organization, image["name"])
             if image_tags is None:
                 continue
 
@@ -391,8 +190,7 @@ def apply_pruner_rule(
                                  f"\t\tlast_modified: {tag['last_modified']} \tstart_ts: {tag['start_ts']}"
                                  )
             else:
-                delete_tags(quay_host, app_token, organization,
-                            image["name"], bad_tags)
+                quayApi.delete_tags(logger, quay_host, app_token, organization, image["name"], bad_tags)
 
 
 if __name__ == "__main__":
@@ -409,7 +207,6 @@ if __name__ == "__main__":
     logger.info(f"DEBUG {debug}, DRY_RUN {dryRun}, QUAY_URL {quayUrl}")
     if debug:
         logger.debug(f"Quay App Token: {oauthToken}")
-
 
     configFile = "/opt/conf/config.yaml"
     try:
@@ -435,7 +232,7 @@ if __name__ == "__main__":
 
         try:
             org_list = get_orgs_list(quayUrl, oauthToken)
-        except ErrorAPIResponse403InsufficientScope:
+        except quayApi.ErrorAPIResponse403InsufficientScope:
             logger.error(f"The token provided by 'QUAY_TOKEN' environment variable hasn't superadmin privileges and "
                          f"the call to the API 'https://{quayUrl}/api/v1/user/authorizations' has failed with the "
                          f"error 'Insufficient scope' status code 403. If you want use an access token without "
@@ -462,4 +259,3 @@ if __name__ == "__main__":
         for org in org_default_list:
             apply_pruner_rule(quayUrl, oauthToken, org, default_params,
                               debug, dryRun)
-
