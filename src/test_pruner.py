@@ -10,7 +10,7 @@ def test_get_repos_json(requests_mock):
     quay_url = 'quay.example.org'
     quay_org = "myorg"
     token = "d34db33f"
-    repos = pruner.get_repos_json(quay_url, token, quay_org)
+    repos = pruner.get_repo_list_json(quay_url, token, quay_org)
     assert repos == {"repositories": []}
 
 
