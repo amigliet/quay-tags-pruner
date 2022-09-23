@@ -31,6 +31,11 @@ This application accepts the following inputs:
     - **config.yaml** This YAML file contains the definition of the rule used by the application to prune the image
       tags.
 
+**Important note: This application doesn't prune tags of repositories with state 'MIRROR' (repositories with mirror
+settings enabled) o 'READ_ONLY'. When this application identify a repository with one of these states, it prints a 
+warning messages, skip the repository and continue its execution. On both cases the API call to delete tags from the 
+repositories fails.**
+
 ## Configuration file description
 
 The following textbox contains an example of the configuration file config.yaml.
@@ -73,7 +78,8 @@ The "config.yaml" file is a dictionary with two keys:
   pruning parameters of the default rule is applied (if the default rule is enabled using the parameter "enabled") is
   applied to all the organizations of the Quay registry except to the organization already specified in the
   organization_list parameters of the rules. The default rule can be enabled or disabled modifying the parameter enabled
-  that accepts only two values "True" or "False"
+  that accepts only two values "True" or "False". The default rule can be enabled only if the access token used by the
+  application has superadmin privileges (see more details in the paragraph 'Access token configuration')
 
 ### Pruning parameters description
 
@@ -154,6 +160,40 @@ default_rule:
       keep_n_tags: "10"
       keep_tags_younger_than: "90"
 ```
+
+## Quay configuration requirement to use quay-tags-pruner
+
+This section describes the prerequisite Quay configuration needed to execute quay-tags-pruner application against a Quay registry
+
+### Access token configuration
+
+The Quay OAuth access token specified using the environment variable QUAY_URL is used to authenticate any API call executed
+to the Quay registry.
+The quay-tags-pruner application can be used with two different set of privileges of the OAuth access token.
+The behaviour of the application changes based on the privileges assigned to the access token.
+
+| Application mode | Permission of OAuth Access Token                                                                       | Description                                                                                                                                                                                                                                                             |
+|------------------|--------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Superadmin       | 1) Read/Write to any accessible repositories<br/><br/>2) Super User Access<br/><br/>3) Administer user | Using this application mode, the default_rule can be enabled.<br/><br/>The user owner of this OAuth Access Token must have superadmin privileges configured in the Quay registry                                                                                        |
+| Standard user    | 1) Read/Write to any accessible repositories<br/><br/>2) Super User Access<br/>                        | Using this application mode the organizations used by pruner must be explicitly defined in the rule parameter of the configuration file<br/><br/>The user owner of this OAuth Access Token doesn't need superadmin privileges configured in the Quay registry |
+
+This application will be able to view, push and pull to all repositories to which the granting user or robot account has write access
+
+This application will be able to administer your installation including managing users, managing organizations and other features found in the superuser panel
+
+The prerequisites to create a Quay OAuth access token are:
+- create a Quay organization
+- login with the user that will be associated to the OAuth Access token
+
+The Red Hat documentation [1] describes the procedure to create a Quay OAuth access token, use the permission specified
+in the column "Permission of OAuth Access Token" of the previous table when required to select them in the procedure.
+
+### Repository configuration
+
+The user associated to the OAuth Access token need "write" access to all repositories(except the repositories with state
+'MIRROR' and 'READ_ONLY') defined in the organization defined in the following list:
+1) All the organizations defined in the rules section of the configuration file
+2) If the default_rule is enables, All the organization configured on the Quay registry
 
 ## Developing
 ### Create a developing environment on a workstation to run/debug the application without using container
@@ -351,3 +391,7 @@ sh-4.4$ python3.8 -u /usr/bin/pruner.py
 $ oc debug --as-root pod/<pod_name>
 Starting pod/quay-tags-pruner-27720510--1-dvjpz-debug ...
 sh-4.4$ python3.8 -u /usr/bin/pruner.py
+
+## References
+
+[1] https://access.redhat.com/documentation/en-us/red_hat_quay/3.6/html-single/use_red_hat_quay/index#create_oauth_access_token
