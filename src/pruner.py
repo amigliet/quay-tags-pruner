@@ -40,12 +40,15 @@ def get_orgs_json(quay_host, app_token):
     base_url = f"https://{quay_host}/api/v1/superuser/organizations/"
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     try:
+        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
+                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
         response = requests.get(
             base_url,
             headers=get_headers,
             timeout=5.0,
             verify=False
         )
+        logger.debug(f"API Response: {response.json()}")
 
         if response.status_code == 403 and response.json()["error_message"] == "Unauthorized" and \
            response.json()["error_type"] == "insufficient_scope":
@@ -76,19 +79,21 @@ def get_repo_list_json(quay_host, app_token, quay_org):
     base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}"
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     try:
+        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
+                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
         response = requests.get(
             base_url,
             headers=get_headers,
             timeout=5.0,
             verify=False
         )
+        logger.debug(f"API Response: {response.json()}")
 
         if response.status_code != 200:
             logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
                              f"API response reason: {response.reason}\n"
                              f"API response text: {response.text}")
             os._exit(1)
-
         result = response.json()
 
         # Manage organization with more than 100 repositories using pagination
@@ -96,12 +101,16 @@ def get_repo_list_json(quay_host, app_token, quay_org):
             next_page = response.json()["next_page"]
             base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}&next_page={next_page}"
 
+            logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
+                         "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
             response = requests.get(
                 base_url,
                 headers=get_headers,
                 timeout=5.0,
                 verify=False
             )
+            logger.debug(f"API Response: {response.json()}")
+
             if response.status_code != 200:
                 logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
                                  f"API response reason: {response.reason}\n"
@@ -121,12 +130,15 @@ def get_repo_json(quay_host, app_token, quay_org, image):
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}"
     try:
+        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
+                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
         response = requests.get(
             base_url,
             headers=get_headers,
             timeout=5.0,
             verify=False
         )
+        logger.debug(f"API Response: {response.json()}")
 
         if response.status_code != 200:
             logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
@@ -151,12 +163,15 @@ def get_tags_json(quay_host, app_token, quay_org, image):
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?onlyActiveTags=True&page={page}"
     try:
+        logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
+                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
         response = requests.get(
             base_url,
             headers=get_headers,
             timeout=5.0,
             verify=False
         )
+        logger.debug(f"API Response: {response.json()}")
 
         if response.status_code != 200:
             logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
@@ -170,12 +185,16 @@ def get_tags_json(quay_host, app_token, quay_org, image):
             page += 1
             base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?onlyActiveTags=True&page={page}"
 
+            logger.debug(f"Invoke API Request Type: GET URL:{base_url} with the following headers: "
+                         "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
             response = requests.get(
                 base_url,
                 headers=get_headers,
                 timeout=5.0,
                 verify=False
             )
+            logger.debug(f"API Response: {response.json()}")
+
             if response.status_code != 200:
                 logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
                              f"API response reason: {response.reason}\n"
@@ -290,12 +309,15 @@ def delete_tags(quay_host, app_token, quay_org, image, tags):
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag"
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     for tag in tags:
+        logger.debug(f"Invoke API Request Type: DELETE URL:{base_url} with the following headers: "
+                     "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
         response = requests.delete(
             f"{base_url}/{tag['name']}",
             headers=get_headers,
             timeout=5.0,
             verify=False
         )
+        logger.debug(f"API Response: {response.json()}")
 
         if response.status_code != 204 and response.status_code != 200:
             logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
