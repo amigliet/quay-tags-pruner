@@ -139,6 +139,8 @@ def select_tags_to_remove(organization,repository,tags, parameter, current_ts):
     return result
 
 
+# This function returns an empty list if there aren't errors during tag deletion API Request
+# Otherwise it returns a list of strings containing a human-readable message describing the API Response errors
 def apply_pruner_rule(
         quay_host, app_token, organization,
         parameters, debug, dry_run):
@@ -151,6 +153,7 @@ def apply_pruner_rule(
         f"debug {debug}\n"
         f"dry_run {dry_run}"
     )
+    delete_tag_error_list = []
 
     repos = quayApi.get_repo_list_json(logger, quay_host, app_token, organization)
     if repos is None:
@@ -191,11 +194,13 @@ def apply_pruner_rule(
                                  f"\t\tlast_modified: {tag['last_modified']} \tstart_ts: {tag['start_ts']}"
                                  )
             else:
-                quayApi.delete_tags(logger, quay_host, app_token, organization, image["name"], bad_tags)
+                current_repository_delete_tags_result = quayApi.delete_tags(logger, quay_host, app_token, organization, image["name"], bad_tags)
+                if current_repository_delete_tags_result != []:
+                    delete_tag_error_list.extend(current_repository_delete_tags_result)
 
+    return delete_tag_error_list
 
 if __name__ == "__main__":
-
     logger = setup_logger()
 
     checkConfiguration.check_environment_variables(logger)
@@ -221,12 +226,18 @@ if __name__ == "__main__":
         logger.exception(f"Error reading file {configFile}: {err}")
         os._exit(1)
 
+    # Define a list of potential errors occurred during the Quay delete tags API requests to show them at the end
+    # of the application execution
+    tags_delete_errors_list=[]
+
     # Evaluate rules for specific organization lists
     for rule in conf_yaml["rules"]:
         params = rule["parameters"]
 
         for org in rule["organization_list"]:
-            apply_pruner_rule(quayUrl, oauthToken, org, params, debug, dryRun)
+            tags_delete_errors_list_during_apply_pruner_rule=apply_pruner_rule(quayUrl, oauthToken, org, params, debug, dryRun)
+            if tags_delete_errors_list_during_apply_pruner_rule != []:
+                tags_delete_errors_list.extend(tags_delete_errors_list_during_apply_pruner_rule)
 
     # Evaluate default rule
     if conf_yaml["default_rule"]["enabled"]:
@@ -258,5 +269,15 @@ if __name__ == "__main__":
         default_params = conf_yaml["default_rule"]["parameters"]
 
         for org in org_default_list:
-            apply_pruner_rule(quayUrl, oauthToken, org, default_params,
-                              debug, dryRun)
+            tags_delete_errors_list_during_apply_pruner_rule=apply_pruner_rule(quayUrl, oauthToken, org, default_params, debug, dryRun)
+            if tags_delete_errors_list_during_apply_pruner_rule != []:
+                tags_delete_errors_list.extend(tags_delete_errors_list_during_apply_pruner_rule)
+
+    if tags_delete_errors_list == []:
+        logger.info("Application has terminated successfully")
+    else:
+        # convert list of string to multi-line string
+        tags_delete_errors_list_multiline_str = "\n".join(tags_delete_errors_list)
+        logger.error(f"Application has terminated with the following errors on tag deletion API Requests:\n"
+                     f"{tags_delete_errors_list_multiline_str}")
+        os._exit(1)
