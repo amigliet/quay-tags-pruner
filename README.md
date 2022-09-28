@@ -144,8 +144,19 @@ rules:
   - organization_list:
       - org5
     parameters:
+    # Keep the 2 most recent uploaded tags matching the regular expression "v.[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" of all
+    # repositories of the organization org5 and delete all the other tags matching this regular expression
+    - tag_filter: "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+      keep_n_tags: "2"
+    # Keep the 5 most recent uploaded tags matching the regular expression "v.[0-9]+.[0-9]+.[0-9]+-dev[0-9]+" of all
+    # repositories of the organization org5 and delete all the other tags matching this regular expression
+    - tag_filter: "v[0-9]+.[0-9]+.[0-9]+-dev[0-9]+"
+      keep_n_tags: "5"
+  - organization_list:
+      - org6
+    parameters:
     # Keep the tags containing the string "prod" in their name uploaded before 120 days ago of each reposities of the
-    # organization "org4" but delete all the other tags containing the string "prod" in their name of these repositories
+    # organization "org6" but delete all the other tags containing the string "prod" in their name of these repositories
     - tag_filter: "prod"
       keep_tags_younger_than: "120"
     # Keep the tags containing the string "test" in their name uploaded before 60 days ago of each reposities of the
