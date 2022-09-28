@@ -83,6 +83,7 @@ def select_tags_to_remove(organization,repository,tags, parameter, current_ts):
         if match:
             matches.append(tag)
     matches_len = len(matches)
+    logger.debug(f"The following tags { [tag['name'] for tag in matches] } have been matched by the regular expression {pattern} ")
 
     # If keep_n_tags is defined in parameter, filter the tags that needs to be deleted based on this condition and store
     # them in tag_deleted_by_keep_tag_number
