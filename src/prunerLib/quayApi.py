@@ -1,4 +1,5 @@
 import requests
+import os
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Disable SSL Warnings
@@ -167,11 +168,15 @@ def get_tags_json(logger, quay_host, app_token, quay_org, image):
         return result
 
 
+# This function returns an empty list if there aren't errors during tag deletion API Request
+# Otherwise it returns a list of strings containing a human-readable message describing the API Response errors
 def delete_tags(logger, quay_host, app_token, quay_org, image, tags):
+    delete_tag_error_list = []
+
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag"
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     for tag in tags:
-        logger.debug(f"Invoke API Request Type: DELETE URL:{base_url} with the following headers: "
+        logger.debug(f"Invoke API Request Type: DELETE URL:{base_url} tag {tag['name']} with the following headers: "
                      "{'accept': 'application/json', 'Authorization': 'Bearer <QUAY_TOKEN_OBFUSCATED> }")
         response = requests.delete(
             f"{base_url}/{tag['name']}",
@@ -179,13 +184,7 @@ def delete_tags(logger, quay_host, app_token, quay_org, image, tags):
             timeout=5.0,
             verify=False
         )
-        logger.debug(f"API Response: {response.json()}")
-
-        if response.status_code != 204 and response.status_code != 200:
-            logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
-                             f"API response reason: {response.reason}\n"
-                             f"API response text: {response.text}")
-            os._exit(1)
+        logger.debug(f"API Response {vars(response)}")
 
         try:
             response.raise_for_status()
@@ -195,6 +194,14 @@ def delete_tags(logger, quay_host, app_token, quay_org, image, tags):
                     f"{quay_org}/{image}:{tag['name']} has already been deleted"
                 )
             else:
-                logger.exception(f"Error deleting tag {tag['name']} of the image {quay_org}/{image}: {err}")
+                logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}.\n"
+                             f"The expected status code is 200. API response reason: {response.reason}\n"
+                             f"API response text: {response.text}")
+                delete_tag_error_list.append(
+                    f"Error occurred deleting tags {tag['name']} of {quay_org}/{image} Status code API response: "
+                    f"{response.status_code} API response reason: {response.reason} API response text: {response.text}")
+
         else:
             logger.info(f"{quay_org}/{image}:{tag['name']} deleted")
+
+    return delete_tag_error_list
