@@ -20,3 +20,7 @@ dryRun: False
 quayAppToken: "<TOKEN>"
 quayUrl: "example-quay-quay-registry.apps.clustername.basedomain.com"
 
+# Prometheus role parameter
+prometheusRuleDeploy: true
+prometheusRuleAlertName: "QuayTagsPrunerJobStatusFailed"
+prometheusRuleAlertSeverity: "error"
