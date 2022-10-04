@@ -316,8 +316,8 @@ $ podman start pruner
 # Open a bash session on the container
 $ podman exec -ti pruner /bin/bash
 
-# Run the python script /usr/bin/pruner.py using the interpeter /usr/bin/python3.8
-$ /usr/bin/python3.8 -u /usr/bin/pruner.py
+# Run the python script /usr/bin/pruner.py using the interpeter /usr/bin/python3.9
+$ /usr/bin/python3.9 -u /usr/bin/pruner.py
 ```
 
 ### Clean podman environment after the execution of the quay-tags-pruner container
@@ -414,14 +414,14 @@ The following list report the description of the most common STATUS value:
 
 $ oc debug pod/<pod_name>
 Starting pod/quay-tags-pruner-27720510--1-dvjpz-debug ...
-sh-4.4$ python3.8 -u /usr/bin/pruner.py
+sh-4.4$ python3.9 -u /usr/bin/pruner.py
 
 * You can also start a debug pod with root access. quay-tags-pruner pod typically run with non-root privileges, but
   running troubleshooting pods with temporary root privileges can be useful during further issue investigation.
 
 $ oc debug --as-root pod/<pod_name>
 Starting pod/quay-tags-pruner-27720510--1-dvjpz-debug ...
-sh-4.4$ python3.8 -u /usr/bin/pruner.py
+sh-4.4$ python3.9 -u /usr/bin/pruner.py
 
 ## References
 
