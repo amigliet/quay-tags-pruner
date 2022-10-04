@@ -6,8 +6,8 @@ COPY src/prunerLib /usr/lib/pruner/prunerLib
 
 ENV PYTHONPATH "${PYTHONPATH}:/usr/lib/pruner"
 
-RUN dnf install -y python3.8 && dnf clean all && \
-    pip-3.8 install -r /tmp/requirements.txt
+RUN dnf install -y python3.9 && dnf clean all && \
+    pip-3.9 install -r /tmp/requirements.txt
 
 USER 1001
-ENTRYPOINT ["/usr/bin/python3.8", "-u", "/usr/bin/pruner.py"]
+ENTRYPOINT ["/usr/bin/python3.9", "-u", "/usr/bin/pruner.py"]
