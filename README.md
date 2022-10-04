@@ -202,6 +202,30 @@ The user associated to the OAuth Access token need "write" access to all reposit
 1) All the organizations defined in the rules section of the configuration file
 2) If the default_rule is enables, All the organization configured on the Quay registry
 
+## Monitoring
+
+The status of the application can be monitored using the prometheus rule defined in the file
+helm/pruner/templates/prometheusrule.yaml.
+This prometheus rule is firing an alarm named "QuayTagsPrunerJobStatusFailed" when there are failed Job in the
+quay-tags-pruner application namespace.
+
+
+The file helm/pruner/templates/values.yaml contains the following configuration variables related to this prometheus
+rule:
+```
+$ grep prometheusRule helm/pruner/values.yaml 
+# A booolean variabile. If it is set to true, the prometheus rule is deployed
+prometheusRuleDeploy: true
+
+# The name of the alarm
+prometheusRuleAlertName: "QuayTagsPrunerJobStatusFailed"
+
+# Define the severity of the prometheus rule (allowed values: critical, error, warning, info )
+prometheusRuleAlertSeverity: "error"
+```
+
+In order to ackowledge the error, the kubernetes job resources in error state can be deleted
+
 ## Developing
 ### Create a developing environment on a workstation to run/debug the application without using container
 

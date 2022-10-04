@@ -1,0 +1,21 @@
+{{- if .Values.prometheusRuleDeploy }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cronjob-quay-tags-pruner-prometheus-metric
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: quay-tags-pruner
+spec:
+  groups:
+  - name: cronjob-fail
+    rules:
+    - alert: {{ .Values.prometheusRuleAlertName }}
+      expr: |
+        kube_job_status_failed{namespace="{{ .Values.namespace }}"} >= 1
+      labels:
+        severity: "{{ .Values.prometheusRuleAlertSeverity }}"
+      annotations:
+        description: "Job {{ "{{" }}$labels.namespaces{{ "}}" }}/{{ "{{" }}$labels.job{{ "}}}" }} failed to complete"
+        summary: Job failed
+{{ end }}
