@@ -38,6 +38,8 @@ def check_configuration_file(logger, conf_yaml):
     verify_value_of_default_rule_is_a_dictionary(logger, conf_yaml)
     verify_existence_key_enabled_in_default_rule(logger, conf_yaml)
     verify_value_of_key_enabled_in_default_rule(logger, conf_yaml)
+    verify_existence_key_exclude_organizations_regex_in_default_rule(logger, conf_yaml)
+    verify_value_of_key_exclude_organizations_regex_in_default_rule(logger, conf_yaml)
     verify_existence_key_parameters_in_default_rule(logger, conf_yaml)
 
     for rule in conf_yaml["rules"]:
@@ -102,6 +104,34 @@ def verify_existence_key_parameters_in_default_rule(logger, conf_yaml):
     if 'parameters' not in conf_yaml["default_rule"].keys():
         logger.error("Terminating the application with an error in the configuration file: "
                      "The key 'parameters' is not defined inside 'default_rule' dictionary"
+                     )
+        exit(1)
+
+def verify_value_of_key_exclude_organizations_regex_in_default_rule(logger, conf_yaml):
+    if not isinstance(conf_yaml["default_rule"]["exclude_organizations_regex"], str):
+        logger.error("Terminating the application with an error in the configuration file: "
+                     "The value of key 'exclude_organizations_regex' in default_rule section it not a string. "
+                     )
+        exit(1)
+
+    # check that exclude_organizations_regex is a valid regular expression
+    try:
+        re.compile(conf_yaml["default_rule"]["exclude_organizations_regex"])
+        exclude_organizations_regex_is_valid = True
+    except re.error:
+        exclude_organizations_regex_is_valid = False
+    if not exclude_organizations_regex_is_valid:
+        logger.error(f"Terminating the application with an error in the configuration file: "
+                     f"The parameter exclude_organizations_regex is not valid, the value of the key "
+                     f"exclude_organizations_regex' is not a regular expression"
+                     )
+        exit(1)
+
+
+def verify_existence_key_exclude_organizations_regex_in_default_rule(logger, conf_yaml):
+    if 'exclude_organizations_regex' not in conf_yaml["default_rule"].keys():
+        logger.error("Terminating the application with an error in the configuration file: "
+                     "The key 'exclude_organizations_regex' is not defined inside 'default_rule' dictionary"
                      )
         exit(1)
 

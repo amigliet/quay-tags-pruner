@@ -15,6 +15,7 @@ rules:
 
 default_rule:
   enabled: True
+  exclude_organizations_regex: "^org4$|^org5$"
   parameters:
     - tag_filter: "."
       keep_n_tags: "10"
