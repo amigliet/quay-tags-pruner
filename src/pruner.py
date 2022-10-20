@@ -256,7 +256,18 @@ if __name__ == "__main__":
         if debug:
             logger.debug(f"Organizations complete list: {org_list}")
 
-        org_exclude_list = []
+# If the parameter exclude_organizations_regex is not an empty string, initialize org_exclude_list with the list
+# organization names matching the regex defined in exclude_organizations_regex
+        if conf_yaml['default_rule']['exclude_organizations_regex'] != "":
+            exclude_organizations_filter_regex = re.compile(conf_yaml['default_rule']['exclude_organizations_regex'])
+            org_exclude_list = [org for org in org_list if exclude_organizations_filter_regex.match(org)]
+# If the parameter exclude_organizations_regex is an empty string, Initialize org_exclude_list with an empty list
+        else:
+            org_exclude_list = []
+        if debug:
+            logger.debug(f"Organizations excluded using the configuration file parameter exclude_organizations_regex "
+                         f"list: {org_exclude_list}")
+
         for r in conf_yaml["rules"]:
             for o in r["organization_list"]:
                 org_exclude_list.append(o)

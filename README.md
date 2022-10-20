@@ -61,6 +61,7 @@ rules:
       keep_tags_younger_than: "120"
 default_rule:
   enabled: True
+  exclude_organizations_regex: "^org4$|^org5$"
   parameters:
     - tag_filter: "."
       keep_n_tags: "10"
@@ -79,7 +80,11 @@ The "config.yaml" file is a dictionary with two keys:
   applied to all the organizations of the Quay registry except to the organization already specified in the
   organization_list parameters of the rules. The default rule can be enabled or disabled modifying the parameter enabled
   that accepts only two values "True" or "False". The default rule can be enabled only if the access token used by the
-  application has superadmin privileges (see more details in the paragraph 'Access token configuration')
+  application has superadmin privileges (see more details in the paragraph 'Access token configuration').
+  The default rule contains also a required parameter named 'exclude_organizations_regex'. If the value of
+  'exclude_organizations_regex' is a valid regular expression, the organizations matching this regular expression are
+  excluded by the default rule pruning parameter and no tags are deleted on their repositories by this application.
+  If 'exclude_organizations_regex' contains an empty string, this parameter doesn't exclude any organization.
 
 ### Pruning parameters description
 
@@ -166,6 +171,7 @@ rules:
       keep_tags_younger_than: "60"
 default_rule:
   enabled: False
+  exclude_organizations_regex: ""
   parameters:
     - tag_filter: "."
       keep_n_tags: "10"
