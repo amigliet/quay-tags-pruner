@@ -1,6 +1,11 @@
 # Default values for pruner.
 # This is a YAML-formatted file.
 
+# Config file used to generate configmap/quay-tags-pruner-config
+#configFile: "config.yaml"
+
+cronJobApiVersion: batch/v1
+
 failedJobsHistoryLimit: 1
 
 image: quay.io/amigliet/quay-tags-pruner:v0.2
@@ -11,7 +16,6 @@ namespace: demo-cronjobs
 schedule: 30 22 * * *
 startingDeadlineSeconds: 200
 successfulJobsHistoryLimit: 3
-cronJobApiVersion: batch/v1
 
 
 # Env variables
