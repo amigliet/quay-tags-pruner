@@ -1,5 +1,6 @@
 import requests
 import os
+import copy
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Disable SSL Warnings
