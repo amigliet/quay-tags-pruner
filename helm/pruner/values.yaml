@@ -12,6 +12,7 @@ schedule: 30 22 * * *
 startingDeadlineSeconds: 200
 successfulJobsHistoryLimit: 3
 cronJobApiVersion: batch/v1
+suspend: false
 
 
 # Env variables

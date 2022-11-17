@@ -39,5 +39,6 @@ spec:
               name: quay-tags-pruner-config
             name: quay-config
   schedule: {{ .Values.schedule }}
+  suspend: {{ .Values.suspend }}
   startingDeadlineSeconds: {{ .Values.startingDeadlineSeconds }}
   successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
