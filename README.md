@@ -20,6 +20,8 @@ This application accepts the following inputs:
       application but the application only show to the standard output the task that it would execute
     - **DEBUG** This boolean variable accepts only two values "True" or "False". If the value
       of this variable is "True", it increases the verbosity of the logging messages
+    - **QUAY_API_TIMEOUT** This variable of type float allows to define the Quay API timeout value in seconds.
+      The default value, if this variable isn't defined is 60.0
 
 
 * **Environment variables** (specified in the secret "quay-tags-pruner-token" when this application run on OpenShift):

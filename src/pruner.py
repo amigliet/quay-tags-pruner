@@ -23,8 +23,8 @@ def setup_logger():
     return logger_initialization
 
 
-def get_orgs_list(quay_host, app_token):
-    org_list_json = quayApi.get_orgs_json(logger, quay_host, app_token)
+def get_orgs_list(quay_host, app_token, api_timeout):
+    org_list_json = quayApi.get_orgs_json(logger, quay_host, app_token, api_timeout)
 
     org_list = []
     for o in org_list_json["organizations"]:
@@ -34,8 +34,8 @@ def get_orgs_list(quay_host, app_token):
 
 
 # Get the parameter state of a repository ( used to extract the state and skip repo with state MIRROR or READ_ONLY)
-def get_repo_state_parameter(quay_host, app_token, quay_org, image):
-    api_response=quayApi.get_repo_json(logger, quay_host, app_token, quay_org, image)
+def get_repo_state_parameter(quay_host, app_token, api_timeout, quay_org, image):
+    api_response=quayApi.get_repo_json(logger, quay_host, app_token, api_timeout, quay_org, image)
     return api_response["state"]
 
 
@@ -142,7 +142,7 @@ def select_tags_to_remove(organization,repository,tags, parameter, current_ts):
 # This function returns an empty list if there aren't errors during tag deletion API Request
 # Otherwise it returns a list of strings containing a human-readable message describing the API Response errors
 def apply_pruner_rule(
-        quay_host, app_token, organization,
+        quay_host, app_token, api_timeout, organization,
         parameters, debug, dry_run):
     logger.debug(
         f"Invoke function apply_pruner_rule with the following parameters:\n"
@@ -155,7 +155,7 @@ def apply_pruner_rule(
     )
     delete_tag_error_list = []
 
-    repos = quayApi.get_repo_list_json(logger, quay_host, app_token, organization)
+    repos = quayApi.get_repo_list_json(logger, quay_host, app_token, api_timeout, organization)
     if repos is None:
        return
 
@@ -165,7 +165,7 @@ def apply_pruner_rule(
 
     for image in repos["repositories"]:
 
-        repository_state = get_repo_state_parameter(quay_host, app_token, organization, image["name"])
+        repository_state = get_repo_state_parameter(quay_host, app_token, api_timeout, organization, image["name"])
         if repository_state in ["MIRROR", "READ_ONLY"]:
             image_name=image["name"]
             logger.warning(f"The repository ' {organization} / {image_name} has been skipped because its state is "
@@ -174,7 +174,7 @@ def apply_pruner_rule(
 
         for param in parameters:
             logger.info(f"Apply filter: {param['tag_filter']}")
-            image_tags = quayApi.get_tags_json(logger,quay_host, app_token, organization, image["name"])
+            image_tags = quayApi.get_tags_json(logger,quay_host, app_token, api_timeout, organization, image["name"])
             if image_tags is None:
                 continue
 
@@ -194,7 +194,7 @@ def apply_pruner_rule(
                                  f"\t\tlast_modified: {tag['last_modified']} \tstart_ts: {tag['start_ts']}"
                                  )
             else:
-                current_repository_delete_tags_result = quayApi.delete_tags(logger, quay_host, app_token, organization, image["name"], bad_tags)
+                current_repository_delete_tags_result = quayApi.delete_tags(logger, quay_host, app_token, api_timeout, organization, image["name"], bad_tags)
                 if current_repository_delete_tags_result != []:
                     delete_tag_error_list.extend(current_repository_delete_tags_result)
 
@@ -209,6 +209,7 @@ if __name__ == "__main__":
     dryRun = True if os.getenv('DRY_RUN', 'False').upper() == 'TRUE' else False
     quayUrl = os.getenv('QUAY_URL')
     oauthToken = os.getenv('QUAY_APP_TOKEN')
+    api_timeout = float(os.getenv('QUAY_API_TIMEOUT')) if os.getenv('QUAY_API_TIMEOUT') is not None else 60.0
 
     logger.info(f"DEBUG {debug}, DRY_RUN {dryRun}, QUAY_URL {quayUrl}")
     if debug:
@@ -235,7 +236,7 @@ if __name__ == "__main__":
         params = rule["parameters"]
 
         for org in rule["organization_list"]:
-            tags_delete_errors_list_during_apply_pruner_rule=apply_pruner_rule(quayUrl, oauthToken, org, params, debug, dryRun)
+            tags_delete_errors_list_during_apply_pruner_rule=apply_pruner_rule(quayUrl, oauthToken, api_timeout, org, params, debug, dryRun)
             if tags_delete_errors_list_during_apply_pruner_rule != []:
                 tags_delete_errors_list.extend(tags_delete_errors_list_during_apply_pruner_rule)
 
@@ -243,7 +244,7 @@ if __name__ == "__main__":
     if conf_yaml["default_rule"]["enabled"]:
 
         try:
-            org_list = get_orgs_list(quayUrl, oauthToken)
+            org_list = get_orgs_list(quayUrl, oauthToken, api_timeout)
         except quayApi.ErrorAPIResponse403InsufficientScope:
             logger.error(f"The token provided by 'QUAY_TOKEN' environment variable hasn't superadmin privileges and "
                          f"the call to the API 'https://{quayUrl}/api/v1/user/authorizations' has failed with the "
@@ -280,7 +281,7 @@ if __name__ == "__main__":
         default_params = conf_yaml["default_rule"]["parameters"]
 
         for org in org_default_list:
-            tags_delete_errors_list_during_apply_pruner_rule=apply_pruner_rule(quayUrl, oauthToken, org, default_params, debug, dryRun)
+            tags_delete_errors_list_during_apply_pruner_rule=apply_pruner_rule(quayUrl, oauthToken, api_timeout, org, default_params, debug, dryRun)
             if tags_delete_errors_list_during_apply_pruner_rule != []:
                 tags_delete_errors_list.extend(tags_delete_errors_list_during_apply_pruner_rule)
 

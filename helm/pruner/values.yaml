@@ -12,6 +12,7 @@ schedule: 30 22 * * *
 startingDeadlineSeconds: 200
 successfulJobsHistoryLimit: 3
 cronJobApiVersion: batch/v1
+suspend: false
 
 
 # Env variables
@@ -19,6 +20,7 @@ debug: False
 dryRun: False
 quayAppToken: "<TOKEN>"
 quayUrl: "example-quay-quay-registry.apps.clustername.basedomain.com"
+quayApiTimeout: 60.0
 
 # Prometheus role parameter
 prometheusRuleDeploy: true

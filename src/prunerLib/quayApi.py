@@ -14,7 +14,7 @@ class ErrorAPIResponse403InsufficientScope(Exception):
     pass
 
 
-def get_orgs_json(logger, quay_host, app_token):
+def get_orgs_json(logger, quay_host, app_token, api_timeout):
     base_url = f"https://{quay_host}/api/v1/superuser/organizations/"
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     try:
@@ -23,7 +23,7 @@ def get_orgs_json(logger, quay_host, app_token):
         response = requests.get(
             base_url,
             headers=get_headers,
-            timeout=5.0,
+            timeout=api_timeout,
             verify=False
         )
         logger.debug(f"API Response: {response.json()}")
@@ -42,7 +42,7 @@ def get_orgs_json(logger, quay_host, app_token):
     else:
         return response.json()
 
-def get_repo_list_json(logger, quay_host, app_token, quay_org):
+def get_repo_list_json(logger, quay_host, app_token, api_timeout, quay_org):
     base_url = f"https://{quay_host}/api/v1/repository?namespace={quay_org}"
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     try:
@@ -51,16 +51,17 @@ def get_repo_list_json(logger, quay_host, app_token, quay_org):
         response = requests.get(
             base_url,
             headers=get_headers,
-            timeout=5.0,
+            timeout=api_timeout,
             verify=False
         )
-        logger.debug(f"API Response: {response.json()}")
+
 
         if response.status_code != 200:
             logger.error(f"Error Quay API request to URL {base_url} has the status code {response.status_code}. The expected status code is 200.\n"
                              f"API response reason: {response.reason}\n"
                              f"API response text: {response.text}")
             os._exit(1)
+        logger.debug(f"API Response: {response.json()}")
         result = response.json()
 
         # Manage organization with more than 100 repositories using pagination
@@ -73,7 +74,7 @@ def get_repo_list_json(logger, quay_host, app_token, quay_org):
             response = requests.get(
                 base_url,
                 headers=get_headers,
-                timeout=5.0,
+                timeout=api_timeout,
                 verify=False
             )
             logger.debug(f"API Response: {response.json()}")
@@ -93,7 +94,7 @@ def get_repo_list_json(logger, quay_host, app_token, quay_org):
 
 
 # Get information of a specific repository
-def get_repo_json(logger, quay_host, app_token, quay_org, image):
+def get_repo_json(logger, quay_host, app_token, api_timeout, quay_org, image):
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}"
     try:
@@ -102,7 +103,7 @@ def get_repo_json(logger, quay_host, app_token, quay_org, image):
         response = requests.get(
             base_url,
             headers=get_headers,
-            timeout=5.0,
+            timeout=api_timeout,
             verify=False
         )
         logger.debug(f"API Response: {response.json()}")
@@ -119,7 +120,7 @@ def get_repo_json(logger, quay_host, app_token, quay_org, image):
         return result
 
 
-def get_tags_json(logger, quay_host, app_token, quay_org, image):
+def get_tags_json(logger, quay_host, app_token, api_timeout, quay_org, image):
     page=1
     get_headers = {'accept': 'application/json', 'Authorization': 'Bearer '+ app_token }
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag/?onlyActiveTags=True&page={page}"
@@ -129,7 +130,7 @@ def get_tags_json(logger, quay_host, app_token, quay_org, image):
         response = requests.get(
             base_url,
             headers=get_headers,
-            timeout=5.0,
+            timeout=api_timeout,
             verify=False
         )
         logger.debug(f"API Response: {response.json()}")
@@ -151,7 +152,7 @@ def get_tags_json(logger, quay_host, app_token, quay_org, image):
             response = requests.get(
                 base_url,
                 headers=get_headers,
-                timeout=5.0,
+                timeout=api_timeout,
                 verify=False
             )
             logger.debug(f"API Response: {response.json()}")
@@ -171,7 +172,7 @@ def get_tags_json(logger, quay_host, app_token, quay_org, image):
 
 # This function returns an empty list if there aren't errors during tag deletion API Request
 # Otherwise it returns a list of strings containing a human-readable message describing the API Response errors
-def delete_tags(logger, quay_host, app_token, quay_org, image, tags):
+def delete_tags(logger, quay_host, app_token, api_timeout, quay_org, image, tags):
     delete_tag_error_list = []
 
     base_url = f"https://{quay_host}/api/v1/repository/{quay_org}/{image}/tag"
@@ -182,7 +183,7 @@ def delete_tags(logger, quay_host, app_token, quay_org, image, tags):
         response = requests.delete(
             f"{base_url}/{tag['name']}",
             headers=get_headers,
-            timeout=5.0,
+            timeout=api_timeout,
             verify=False
         )
         logger.debug(f"API Response {vars(response)}")
