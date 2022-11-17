@@ -20,6 +20,8 @@ spec:
               value: "{{ .Values.dryRun }}"
             - name: QUAY_URL
               value: "{{ .Values.quayUrl }}"
+            - name: QUAY_API_TIMEOUT
+              value: "{{ .Values.quayApiTimeout }}"
             envFrom:
             - secretRef:
                 name: quay-tags-pruner-token

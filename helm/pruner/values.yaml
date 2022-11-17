@@ -19,6 +19,7 @@ debug: False
 dryRun: False
 quayAppToken: "<TOKEN>"
 quayUrl: "example-quay-quay-registry.apps.clustername.basedomain.com"
+quayApiTimeout: 60.0
 
 # Prometheus role parameter
 prometheusRuleDeploy: true

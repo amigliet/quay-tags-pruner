@@ -28,6 +28,15 @@ def check_environment_variables(logger):
         exit(1)
     logger.debug("Function check_environment_variables completed with success")
 
+    quay_api_timeout = os.getenv("QUAY_API_TIMEOUT")
+    if quay_api_timeout is not None and not quay_api_timeout.replace('.','',1).isdigit():
+        logger.error(f"Terminating the application with an error in the environment variables: "
+                     f"The value '{quay_api_timeout}' of environment variables QUAY_API_TIMEOUT is not a valid float"
+                     f"number. (example valid value 60.0)'"
+                     )
+        exit(1)
+    logger.debug("Function check_environment_variables completed with success")
+
 
 def check_configuration_file(logger, conf_yaml):
     logger.debug("Execute function checkConfigurationFilee")
