@@ -1,0 +1,45 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: quay-tags-pruner
+  namespace: instance1-pruner-job
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          activeDeadlineSeconds: 500
+          containers:
+          - name: quay-tags-pruner
+            env:
+            - name: DEBUG
+              value: "false"
+            - name: DRY_RUN
+              value: "false"
+            - name: QUAY_URL
+              value: "example-quay-quay-registry.apps.clustername.basedomain.com"
+            - name: QUAY_API_TIMEOUT
+              value: "60"
+            envFrom:
+            - secretRef:
+                name: quay-tags-pruner-token
+            image: quay.io/amigliet/quay-tags-pruner:v0.2
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+            - mountPath: /opt/conf
+              name: quay-config
+          dnsPolicy: ClusterFirst
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - configMap:
+              defaultMode: 420
+              name: quay-tags-pruner-config
+            name: quay-config
+  schedule: 30 22 * * *
+  suspend: false
+  startingDeadlineSeconds: 200
+  successfulJobsHistoryLimit: 3

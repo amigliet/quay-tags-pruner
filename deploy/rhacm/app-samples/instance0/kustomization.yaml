@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namePrefix: instance0-
+#nameSuffix: -v1
+
+configMapGenerator:
+- name: quay-tags-pruner-config
+  files:
+    - config.yaml=files/config.yaml
+
+resources:
+  - cronjob.yaml
+  - namespace.yaml
+  - prometheusrule.yaml
+
+secretGenerator:
+- name: quay-tags-pruner-token
+  literals:
+  - QUAY_APP_TOKEN=<TOKEN>

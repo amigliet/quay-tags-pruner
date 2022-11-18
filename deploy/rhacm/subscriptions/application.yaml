@@ -1,0 +1,10 @@
+---
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: quay-tags-pruner
+  namespace: quay-pruner
+spec:
+  selector:
+    matchLabels:
+      app: quay-tags-pruner

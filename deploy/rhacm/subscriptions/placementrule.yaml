@@ -1,0 +1,12 @@
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: quay-pruner-placementrule
+  namespace: quay-pruner
+  labels:
+    app: quay-tags-pruner
+spec:
+  clusterSelector:
+    matchLabels:
+      quay-pruner: "True"

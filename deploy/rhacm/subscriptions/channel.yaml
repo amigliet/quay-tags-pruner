@@ -1,0 +1,9 @@
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: Channel
+metadata:
+  name: quay-pruner-channel
+  namespace: quay-pruner
+spec:
+  type: Git
+  pathname: https://github.com/amigliet/quay-tags-pruner.git
